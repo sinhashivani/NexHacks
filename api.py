@@ -19,3 +19,4 @@ def get_ui(token_id: str = Query(..., description="CLOB token id")):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
