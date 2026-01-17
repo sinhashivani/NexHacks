@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Polymarket Trade Assistant
 
 A Chrome Extension (Manifest V3) that provides trade recommendations on Polymarket.com market pages. The extension overlays recommendations for amplifying or hedging trades, with a portfolio-aware recommendation engine.
@@ -16,7 +15,6 @@ A Chrome Extension (Manifest V3) that provides trade recommendations on Polymark
 - **Tech Stack**: FastAPI + MongoDB + Motor (async)
 - **APIs**: Gamma API, CLOB API, Gemini API
 - **Features**: Market discovery, similarity scoring, correlation computation, caching
-=======
 # NexHacks - Polymarket Correlation Tool
 
 A tool to help Polymarket users identify correlated trades, find parlay opportunities, and discover hedge options.
@@ -27,7 +25,6 @@ A tool to help Polymarket users identify correlated trades, find parlay opportun
 - **Correlated Trades**: Find markets with statistical correlation + timeline
 - **Parlay Suggestions**: Amplify returns through correlated trade combinations
 - **Hedge Opportunities**: Identify inverse correlations to reduce risk
->>>>>>> 8c2d75a1913a756a65d4466eb30d58d293e82495
 
 ## Project Structure
 
