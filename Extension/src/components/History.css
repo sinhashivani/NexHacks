@@ -1,0 +1,96 @@
+.history-section {
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.history-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.btn-expand {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #666;
+}
+
+.btn-expand:hover {
+  background: #f0f0f0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.history-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.history-item-url {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.history-item-actions button {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.btn-open-history {
+  color: #1976d2;
+  border-color: #1976d2;
+}
+
+.btn-open-history:hover {
+  background: #e3f2fd;
+}
+
+.btn-pin-history {
+  color: #666;
+}
+
+.btn-pin-history:hover {
+  background: #f0f0f0;
+}
+
+.history-item-timestamp {
+  font-size: 10px;
+  color: #999;
+}
