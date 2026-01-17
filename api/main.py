@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 
 from Polymarket_API.get_markets_data import ui
 from Polymarket_API.get_similar_markets import get_similar_by_event_title
+from Polymarket_API.news import fetch_news
+
 
 app = FastAPI(
     title="Polymarket UI Service",
@@ -29,6 +31,20 @@ def get_similar(
         data = get_similar_by_event_title(event_title)
         if not data:
             raise HTTPException(status_code=404, detail="Event not found")
+        return JSONResponse(content=data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/news")
+def get_news(
+    question: str = Query(..., description="Event or market question")
+):
+    try:
+        data = fetch_news(question.strip())
+        if not data:
+            raise HTTPException(status_code=404, detail="No articles found")
         return JSONResponse(content=data)
     except HTTPException:
         raise
