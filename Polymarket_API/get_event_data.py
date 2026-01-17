@@ -109,6 +109,9 @@ def events_to_rows(events: list[dict], tag_id: int, tag_label: str) -> list[dict
     rows: list[dict] = []
 
     for ev in events:
+        ev_slug = ev.get("slug")
+        ev_title = ev.get("title") or ev.get("name")
+
         markets = ev.get("markets") or []
         if not isinstance(markets, list):
             continue
@@ -122,11 +125,8 @@ def events_to_rows(events: list[dict], tag_id: int, tag_label: str) -> list[dict
 
             rows.append(
                 {
-                    "tag_label": tag_label,
-                    "tag_id": tag_id,
-                    "market_id": m.get("id"),
-                    "market_slug": m.get("slug"),
-                    "question": m.get("question") or m.get("title") or m.get("name"),
+                    "event_title": ev_title,
+                    "market_question": m.get("question") or m.get("title") or m.get("name"),
                     "clob_token_ids": (
                         json.dumps(clob_token_ids, ensure_ascii=False)
                         if clob_token_ids is not None
