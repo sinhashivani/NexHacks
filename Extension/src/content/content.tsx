@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, Root } from 'react-dom/client';
 import { FloatingAssistant } from '../components/FloatingAssistant';
 import type { OverlayState } from '../types';
 import { isMarketPage, scrapeCurrentMarket } from '../utils/marketScraper';
@@ -7,47 +7,137 @@ import { overlayStore } from '../utils/overlayStore';
 import { addToHistory } from '../utils/storage';
 import { shadowStyles } from './shadowStyles';
 
-const PANEL_ID = 'pm-overlay-root';
-let panelRoot: HTMLElement | null = null;
-let reactRoot: any = null;
+// Module-scope singletons
+let shadowHost: HTMLElement | null = null;
+let shadowRoot: ShadowRoot | null = null;
+let panelEl: HTMLElement | null = null;
+let reactRoot: Root | null = null;
 let floatingButton: HTMLElement | null = null;
-let shadowDom: ShadowRoot | null = null;
+
+// Trade observer
+let mutationObserver: MutationObserver | null = null;
 let isInitialized = false;
 
-function createShadowRoot(): ShadowRoot {
-  // Check if already exists
-  const existing = document.getElementById(PANEL_ID);
-  if (existing && existing.shadowRoot) {
-    return existing.shadowRoot;
+/**
+ * Apply or remove page push for docked mode
+ */
+function applyPagePush(state: OverlayState): void {
+  if (state.layoutMode === 'docked' && state.open) {
+    console.debug('[CONTENT] Applying page push:', state.width + 24);
+    document.documentElement.style.paddingRight = `${state.width + 24}px`;
+  } else {
+    console.debug('[CONTENT] Removing page push');
+    document.documentElement.style.paddingRight = '';
+  }
+}
+
+/**
+ * Create shadow host and root ONCE - never recreate
+ */
+function ensureUiOnce(): void {
+  if (reactRoot) {
+    console.debug('[CONTENT] UI already initialized, reusing');
+    return;
   }
 
-  // Remove existing if no shadow root
-  if (existing) {
-    existing.remove();
-  }
+  console.debug('[CONTENT] Creating shadow DOM structure');
 
-  const container = document.createElement('div');
-  container.id = PANEL_ID;
-  container.style.cssText = `
-    all: initial;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2147483647;
-    pointer-events: none;
-  `;
-  document.body.appendChild(container);
+  // Create shadow host
+  shadowHost = document.createElement('div');
+  shadowHost.id = 'pm-overlay-host';
+  shadowHost.style.position = 'fixed';
+  shadowHost.style.inset = '0';
+  shadowHost.style.pointerEvents = 'none'; // CRITICAL: do not block page clicks
+  shadowHost.style.zIndex = '2147483647';
 
-  const shadowRoot = container.attachShadow({ mode: 'closed' });
+  // Attach shadow root
+  shadowRoot = shadowHost.attachShadow({ mode: 'open' });
 
-  // Inject styles
+  // Inject styles into shadow root
   const style = document.createElement('style');
   style.textContent = shadowStyles;
   shadowRoot.appendChild(style);
 
-  return shadowRoot;
+  // Create panel element (child of shadow root)
+  panelEl = document.createElement('div');
+  panelEl.id = 'pm-overlay-panel';
+  panelEl.style.position = 'fixed';
+  panelEl.style.pointerEvents = 'auto'; // Panel CAN receive clicks
+  panelEl.style.display = 'none'; // Start hidden
+  shadowRoot.appendChild(panelEl);
+
+  // Append shadow host to document
+  document.documentElement.appendChild(shadowHost);
+
+  // Create React root in panel element
+  reactRoot = createRoot(panelEl);
+
+  console.debug('[CONTENT] Shadow DOM structure created');
+}
+
+/**
+ * Update panel positioning based on layout mode
+ */
+function updatePanelPosition(state: OverlayState): void {
+  if (!panelEl) return;
+
+  if (state.layoutMode === 'docked') {
+    // Docked mode: fixed on right
+    panelEl.style.right = '16px';
+    panelEl.style.top = '16px';
+    panelEl.style.bottom = '16px';
+    panelEl.style.left = 'auto';
+    panelEl.style.width = `${state.width}px`;
+    panelEl.style.height = 'auto';
+  } else {
+    // Floating mode: absolute positioning from x/y
+    panelEl.style.left = `${state.x}px`;
+    panelEl.style.top = `${state.y}px`;
+    panelEl.style.right = 'auto';
+    panelEl.style.bottom = 'auto';
+    panelEl.style.width = `${state.width}px`;
+    panelEl.style.height = `${state.height}px`;
+  }
+}
+
+/**
+ * Render UI - call only this, never recreate shadow root
+ */
+function render(state: OverlayState): void {
+  ensureUiOnce();
+
+  if (!panelEl || !reactRoot) {
+    console.error('[CONTENT] Panel or React root not initialized');
+    return;
+  }
+
+  // Update panel display and position
+  panelEl.style.display = state.open ? 'block' : 'none';
+  updatePanelPosition(state);
+
+  // Apply or remove page push
+  applyPagePush(state);
+
+  if (state.open) {
+    const currentMarket = scrapeCurrentMarket();
+
+    // Render component
+    console.debug('[CONTENT] Rendering FloatingAssistant');
+    reactRoot.render(
+      React.createElement(FloatingAssistant, {
+        currentMarket,
+        state,
+        onStateChange: (newState: Partial<OverlayState>) => {
+          console.debug('[CONTENT] FloatingAssistant state change:', newState);
+          overlayStore.setState(newState);
+        },
+      })
+    );
+
+    startTradeObserver();
+  } else {
+    stopTradeObserver();
+  }
 }
 
 function createFloatingButton(): HTMLElement {
@@ -61,6 +151,9 @@ function createFloatingButton(): HTMLElement {
   button.id = 'pm-floating-button';
   button.textContent = 'Open panel';
   button.style.cssText = `
+    display: block;
+    width: 100%;
+    height: 100%;
     position: fixed;
     bottom: 16px;
     right: 16px;
@@ -76,22 +169,26 @@ function createFloatingButton(): HTMLElement {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+    pointer-events: auto;
   `;
 
   button.addEventListener('mouseenter', () => {
     button.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
-  });
+  }, { passive: true });
 
   button.addEventListener('mouseleave', () => {
     button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-  });
+  }, { passive: true });
 
-  button.addEventListener('click', async () => {
+  button.addEventListener('click', async (e) => {
+    e.stopPropagation();
     console.debug('[CONTENT] Open panel button clicked');
     try {
-      console.debug('[CONTENT] Calling overlayStore.toggleOverlay()');
-      await overlayStore.toggleOverlay();
-      console.debug('[CONTENT] toggleOverlay() completed successfully');
+      const state = overlayStore.getState();
+      if (state) {
+        overlayStore.setOpen(!state.open);
+      }
     } catch (error) {
       console.error('[CONTENT] Error toggling overlay:', error);
     }
@@ -100,123 +197,73 @@ function createFloatingButton(): HTMLElement {
   return button;
 }
 
-async function renderPanel() {
-  if (!isMarketPage()) {
-    console.debug('[CONTENT] Not a market page, hiding UI');
-    // Not a market page - hide everything
-    if (reactRoot && panelRoot) {
-      reactRoot.render(null);
-    }
-    if (floatingButton) {
-      floatingButton.style.display = 'none';
-    }
+function startTradeObserver() {
+  if (mutationObserver) {
+    console.debug('[CONTENT] Trade observer already running');
     return;
   }
 
-  const state = overlayStore.getState();
-  if (!state) {
-    console.debug('[CONTENT] No state yet, initializing');
-    await overlayStore.init();
-  }
+  console.debug('[CONTENT] Starting trade data observer');
 
-  const currentState = overlayStore.getState();
-  if (!currentState) {
-    console.debug('[CONTENT] Still no state after init, returning');
+  // Look for trade table or order book DOM
+  const tradeTarget = document.querySelector('[data-testid*="order"], [class*="trade"], [class*="market-card"]');
+  if (!tradeTarget) {
+    console.debug('[CONTENT] No trade DOM found to observe');
     return;
   }
 
-  console.debug('[CONTENT] Rendering panel with state:', currentState);
+  mutationObserver = new MutationObserver((mutations) => {
+    // Extract trade data from mutations
+    mutations.forEach((mutation) => {
+      const target = mutation.target as HTMLElement;
 
-  // Show/hide floating button based on state
-  if (floatingButton) {
-    floatingButton.style.display = currentState.open ? 'none' : 'block';
-    console.debug('[CONTENT] Button display set:', currentState.open ? 'none' : 'block');
-  }
+      // Look for price, volume, or trade data in text content
+      const priceMatch = target.textContent?.match(/[\$]?([\d,]+\.?\d*)/);
+      const volumeMatch = target.textContent?.match(/vol[ume]*:?\s*[\d,]+/i);
 
-  if (!currentState.open) {
-    console.debug('[CONTENT] Panel is closed, rendering nothing');
-    // Panel is closed - render nothing in shadow DOM
-    if (reactRoot && panelRoot) {
-      reactRoot.render(null);
-    }
-    return;
-  }
-
-  console.debug('[CONTENT] Panel is open, rendering FloatingAssistant');
-  // Panel should be open - render it in shadow DOM
-  shadowDom = createShadowRoot();
-
-  // Get or create panel container
-  let panelContainer = shadowDom.querySelector('.panel-container-wrapper') as HTMLElement;
-  if (!panelContainer) {
-    panelContainer = document.createElement('div');
-    panelContainer.className = 'panel-container-wrapper';
-    panelContainer.style.cssText = `
-      all: revert;
-      pointer-events: auto;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2147483647;
-    `;
-    shadowDom.appendChild(panelContainer);
-  }
-  panelRoot = panelContainer;
-
-  if (!reactRoot) {
-    reactRoot = createRoot(panelContainer);
-  }
-
-  const currentMarket = scrapeCurrentMarket();
-
-  // Add to history
-  await addToHistory({
-    title: currentMarket.title,
-    url: currentMarket.url,
-    timestamp: Date.now(),
+      if (priceMatch || volumeMatch) {
+        console.debug('[CONTENT] Trade data mutation detected:', {
+          price: priceMatch?.[1],
+          volume: volumeMatch?.[0],
+          element: target.tagName,
+        });
+      }
+    });
   });
 
-  console.debug('[CONTENT] Rendering FloatingAssistant component');
-  reactRoot.render(
-    React.createElement(FloatingAssistant, {
-      currentMarket,
-      state: currentState,
-      onStateChange: async (newState: OverlayState) => {
-        console.debug('[CONTENT] FloatingAssistant state change:', newState);
-        await overlayStore.setState(newState);
-        await renderPanel();
-      },
-    })
-  );
+  mutationObserver.observe(tradeTarget, {
+    subtree: true,
+    characterData: true,
+    childList: true,
+    attributes: true,
+  });
+
+  console.debug('[CONTENT] Trade observer started');
 }
 
-async function handleStateChange(newState: OverlayState) {
-  // Update floating button visibility
-  console.debug('[CONTENT] State changed:', newState);
-  if (floatingButton) {
-    floatingButton.style.display = newState.open ? 'none' : 'block';
-    console.debug('[CONTENT] Button visibility set to:', newState.open ? 'hidden' : 'visible');
+function stopTradeObserver() {
+  if (mutationObserver) {
+    console.debug('[CONTENT] Stopping trade data observer');
+    mutationObserver.disconnect();
+    mutationObserver = null;
   }
-
-  // Re-render panel
-  await renderPanel();
 }
 
 function handleRouteChange() {
   // Debounce route changes
   setTimeout(async () => {
     if (isMarketPage()) {
-      await renderPanel();
-    } else {
-      // Not a market page - hide everything
-      if (reactRoot && panelRoot) {
-        reactRoot.render(null);
+      console.debug('[CONTENT] Route changed to market page, updating UI');
+      const state = overlayStore.getState();
+      if (state) {
+        render(state);
       }
+    } else {
+      console.debug('[CONTENT] Route changed to non-market page, hiding UI');
       if (floatingButton) {
         floatingButton.style.display = 'none';
       }
+      stopTradeObserver();
     }
   }, 100);
 }
@@ -236,7 +283,8 @@ function setupSPADetection() {
     handleRouteChange();
   };
 
-  window.addEventListener('popstate', handleRouteChange);
+  // Passive: popstate listeners don't need preventDefault()
+  window.addEventListener('popstate', handleRouteChange, { passive: true });
 }
 
 async function init() {
@@ -268,23 +316,50 @@ async function init() {
   const state = overlayStore.getState();
   if (floatingButton && state) {
     floatingButton.style.display = state.open ? 'none' : 'block';
-    console.debug('[CONTENT] Initial button visibility:', state.open ? 'hidden' : 'visible', 'open=', state.open);
+    console.debug('[CONTENT] Initial button visibility:', state.open ? 'hidden' : 'visible');
   }
 
   // Setup SPA detection
   console.debug('[CONTENT] Setting up SPA detection');
   setupSPADetection();
 
-  // Subscribe to state changes
+  // Ensure UI is created ONCE
+  console.debug('[CONTENT] Ensuring UI created once');
+  ensureUiOnce();
+
+  // Subscribe to state changes - only update, never recreate
   console.debug('[CONTENT] Subscribing to state changes');
   overlayStore.subscribe(async (newState: OverlayState) => {
     console.debug('[CONTENT] State change subscription triggered');
-    await handleStateChange(newState);
+    render(newState);
+
+    // Update button visibility
+    if (floatingButton) {
+      floatingButton.style.display = newState.open ? 'none' : 'block';
+    }
+
+    // Add to history if opening
+    if (newState.open && isMarketPage()) {
+      const currentMarket = scrapeCurrentMarket();
+      await addToHistory({
+        title: currentMarket.title,
+        url: currentMarket.url,
+        timestamp: Date.now(),
+      });
+    }
+  });
+
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => {
+    console.debug('[CONTENT] Page unload, cleaning up');
+    stopTradeObserver();
   });
 
   // Initial render
   console.debug('[CONTENT] Initial render');
-  await renderPanel();
+  if (state) {
+    render(state);
+  }
 
   isInitialized = true;
   console.debug('[CONTENT] Initialization complete');

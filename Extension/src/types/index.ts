@@ -35,11 +35,11 @@ export interface BasketLeg {
 
 export interface OverlayState {
   open: boolean;
-  minimized: boolean;
   width: number;
   height: number;
   x: number;
   y: number;
+  layoutMode: 'docked' | 'floating';
 }
 
 export interface StorageData {

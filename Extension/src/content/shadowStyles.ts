@@ -1,10 +1,12 @@
 // Inline CSS for Shadow DOM - Floating overlay styles
+// CRITICAL: Wrapper has pointer-events:none and zero dimensions
+// Panel itself has pointer-events:auto for interaction
 export const shadowStyles = `
 * {
   box-sizing: border-box;
 }
 
-/* Floating Assistant Styles */
+/* Floating Assistant Styles - pointer-events: auto enabled */
 .floating-assistant {
   position: fixed;
   background: white;
@@ -16,6 +18,8 @@ export const shadowStyles = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   z-index: 2147483647;
   overflow: hidden;
+  /* CRITICAL: pointer-events auto so clicks reach this panel */
+  pointer-events: auto;
 }
 
 .floating-header {
@@ -28,6 +32,7 @@ export const shadowStyles = `
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
+  touch-action: none;
 }
 
 .floating-header:active {
@@ -106,37 +111,6 @@ export const shadowStyles = `
   word-break: break-all;
 }
 
-.floating-minimized {
-  position: fixed;
-  background: white;
-  border: 1px solid #d0d0d0;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  z-index: 2147483647;
-  user-select: none;
-  cursor: grab;
-}
-
-.floating-minimized:active {
-  cursor: grabbing;
-}
-
-.floating-minimized-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1a1a1a;
-  gap: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .floating-resize-handle {
   position: absolute;
   bottom: 0;
@@ -146,6 +120,7 @@ export const shadowStyles = `
   cursor: se-resize;
   background: linear-gradient(135deg, transparent 0%, #d0d0d0 50%, #d0d0d0 100%);
   border-radius: 0 0 8px 0;
+  touch-action: none;
 }
 
 .floating-resize-handle:hover {

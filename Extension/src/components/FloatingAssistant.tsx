@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { CurrentMarket, MarketRecommendation, OverlayState } from '../types';
+import { ContextHeader } from './ContextHeader';
 import { DirectionalIdeas } from './DirectionalIdeas';
 import './FloatingAssistant.css';
 
 interface FloatingAssistantProps {
     currentMarket: CurrentMarket;
     state: OverlayState;
-    onStateChange: (state: OverlayState) => void;
+    onStateChange: (state: Partial<OverlayState>) => void;
 }
 
 export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
@@ -16,110 +17,152 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const [dragStart, setDragStart] = useState({ clientX: 0, clientY: 0 });
+    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, clientX: 0, clientY: 0 });
     const assistantRef = useRef<HTMLDivElement>(null);
+    const headerRef = useRef<HTMLDivElement>(null);
 
-    const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    /**
+     * Handle pointer down on header - only for floating mode drag
+     */
+    const handleHeaderPointerDown = (e: React.PointerEvent) => {
+        // Skip if clicking action buttons
         if ((e.target as HTMLElement).closest('.floating-actions')) {
             return;
         }
+
+        // Only allow drag in floating mode
+        if (state.layoutMode !== 'floating') {
+            return;
+        }
+
+        console.debug('[CONTENT] Drag started');
         setIsDragging(true);
-        setDragOffset({
-            x: e.clientX - state.x,
-            y: e.clientY - state.y,
-        });
+        setDragStart({ clientX: e.clientX, clientY: e.clientY });
+
+        // Capture pointer for this element
+        if (headerRef.current) {
+            headerRef.current.setPointerCapture(e.pointerId);
+        }
     };
 
+    /**
+     * Handle pointer move during drag - update position
+     */
     useEffect(() => {
-        if (!isDragging) return;
+        if (!isDragging || !assistantRef.current || state.layoutMode !== 'floating') return;
 
-        const handleMouseMove = (e: MouseEvent) => {
-            const newX = e.clientX - dragOffset.x;
-            const newY = e.clientY - dragOffset.y;
+        const handlePointerMove = (e: PointerEvent) => {
+            const deltaX = e.clientX - dragStart.clientX;
+            const deltaY = e.clientY - dragStart.clientY;
+
+            const newX = state.x + deltaX;
+            const newY = state.y + deltaY;
 
             // Constrain to viewport
             const constrainedX = Math.max(0, Math.min(newX, window.innerWidth - state.width));
             const constrainedY = Math.max(0, Math.min(newY, window.innerHeight - state.height));
 
             onStateChange({
-                ...state,
                 x: constrainedX,
                 y: constrainedY,
             });
+
+            setDragStart({ clientX: e.clientX, clientY: e.clientY });
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = (e: PointerEvent) => {
+            console.debug('[CONTENT] Drag ended');
             setIsDragging(false);
+            if (headerRef.current) {
+                try {
+                    headerRef.current.releasePointerCapture(e.pointerId);
+                } catch (err) {
+                    // Already released
+                }
+            }
         };
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('pointermove', handlePointerMove, { passive: true });
+        document.addEventListener('pointerup', handlePointerUp, { passive: true });
 
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerUp);
         };
-    }, [isDragging, dragOffset, state, onStateChange]);
+    }, [isDragging, dragStart, state, onStateChange]);
 
-    const handleResizeStart = (e: React.MouseEvent) => {
+    /**
+     * Handle pointer down on resize handle - only for floating mode
+     */
+    const handleResizePointerDown = (e: React.PointerEvent) => {
+        if (state.layoutMode !== 'floating') {
+            return;
+        }
+
         e.preventDefault();
+        console.debug('[CONTENT] Resize started');
         setIsResizing(true);
         setResizeStart({
-            x: e.clientX,
-            y: e.clientY,
+            x: state.x,
+            y: state.y,
             width: state.width,
             height: state.height,
+            clientX: e.clientX,
+            clientY: e.clientY,
         });
+
+        if (assistantRef.current) {
+            assistantRef.current.setPointerCapture(e.pointerId);
+        }
     };
 
+    /**
+     * Handle pointer move during resize
+     */
     useEffect(() => {
-        if (!isResizing) return;
+        if (!isResizing || state.layoutMode !== 'floating') return;
 
-        const handleMouseMove = (e: MouseEvent) => {
-            const deltaX = e.clientX - resizeStart.x;
-            const deltaY = e.clientY - resizeStart.y;
+        const handlePointerMove = (e: PointerEvent) => {
+            const deltaX = e.clientX - resizeStart.clientX;
+            const deltaY = e.clientY - resizeStart.clientY;
 
             const newWidth = Math.max(280, Math.min(560, resizeStart.width - deltaX));
             const newHeight = Math.max(200, resizeStart.height + deltaY);
 
             onStateChange({
-                ...state,
                 width: newWidth,
                 height: newHeight,
             });
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = (e: PointerEvent) => {
+            console.debug('[CONTENT] Resize ended');
             setIsResizing(false);
+            if (assistantRef.current) {
+                try {
+                    assistantRef.current.releasePointerCapture(e.pointerId);
+                } catch (err) {
+                    // Already released
+                }
+            }
         };
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('pointermove', handlePointerMove, { passive: true });
+        document.addEventListener('pointerup', handlePointerUp, { passive: true });
 
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerUp);
         };
     }, [isResizing, resizeStart, state, onStateChange]);
 
     const handleClose = () => {
-        onStateChange({
-            ...state,
-            open: false,
-            minimized: false,
-        });
-    };
-
-    const handleMinimize = () => {
-        onStateChange({
-            ...state,
-            minimized: !state.minimized,
-        });
+        console.debug('[CONTENT] Close button clicked');
+        onStateChange({ open: false });
     };
 
     const handleAddToBasket = (market: MarketRecommendation) => {
-        // Placeholder: In real implementation, would update basket state
         console.log('Add to basket:', market);
     };
 
@@ -127,74 +170,115 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
         window.open(url, '_blank');
     };
 
-    if (state.minimized) {
-        return (
-            <div
-                ref={assistantRef}
-                className="floating-minimized"
-                style={{
-                    left: `${state.x}px`,
-                    top: `${state.y}px`,
-                    width: `${state.width}px`,
-                }}
-                onMouseDown={handleHeaderMouseDown}
-            >
-                <div className="floating-minimized-bar">
-                    <span>Trade Assistant</span>
-                    <div className="floating-actions">
-                        <button className="btn-action" onClick={handleMinimize} title="Restore">
-                            ⬆
-                        </button>
-                        <button className="btn-action btn-close" onClick={handleClose} title="Close">
-                            ✕
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // Only show resize handle in floating mode
+    const showResizeHandle = state.layoutMode === 'floating';
+
+    // Determine if we should use two-column layout (only in docked mode with sufficient width)
+    const useTwoColumnLayout = state.layoutMode === 'docked' && state.width >= 600;
 
     return (
         <div
             ref={assistantRef}
             className="floating-assistant"
             style={{
-                left: `${state.x}px`,
-                top: `${state.y}px`,
                 width: `${state.width}px`,
-                height: `${state.height}px`,
-                cursor: isDragging ? 'grabbing' : 'auto',
+                height: state.layoutMode === 'docked' ? 'auto' : `${state.height}px`,
+                cursor: isDragging ? 'grabbing' : isResizing ? 'se-resize' : 'auto',
+                userSelect: isDragging ? 'none' : 'auto',
+                display: 'flex',
+                flexDirection: 'column',
             }}
         >
-            <div className="floating-header" onMouseDown={handleHeaderMouseDown}>
+            <div
+                ref={headerRef}
+                className="floating-header"
+                onPointerDown={handleHeaderPointerDown}
+                style={{
+                    cursor: state.layoutMode === 'floating' ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                }}
+            >
                 <h2>Trade Assistant</h2>
                 <div className="floating-actions">
-                    <button className="btn-action" onClick={handleMinimize} title="Minimize">
-                        −
-                    </button>
                     <button className="btn-action btn-close" onClick={handleClose} title="Close">
                         ✕
                     </button>
                 </div>
             </div>
 
-            <div className="floating-content">
-                <div className="market-context">
-                    <div className="market-title">{currentMarket.title || 'Polymarket'}</div>
-                    <div className="market-url">{currentMarket.url}</div>
+            {/* Two-Column Layout */}
+            {useTwoColumnLayout ? (
+                <div
+                    style={{
+                        display: 'flex',
+                        flex: 1,
+                        overflow: 'hidden',
+                    }}
+                >
+                    {/* Left Column: Context (30%) */}
+                    <div
+                        style={{
+                            width: '30%',
+                            overflowY: 'auto',
+                            borderRight: '1px solid rgba(255,255,255,0.08)',
+                        }}
+                    >
+                        <ContextHeader />
+                    </div>
+
+                    {/* Right Column: Similar Trades (70%) */}
+                    <div
+                        style={{
+                            width: '70%',
+                            overflowY: 'auto',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <DirectionalIdeas
+                            userSide={currentMarket.side}
+                            onAddToBasket={handleAddToBasket}
+                            onOpenMarket={handleOpenMarket}
+                        />
+                    </div>
                 </div>
+            ) : (
+                /* Single Column Layout (default) */
+                <div
+                    className="floating-content"
+                    style={{
+                        flex: 1,
+                        overflow: 'auto',
+                    }}
+                >
+                    <ContextHeader />
 
-                <DirectionalIdeas
-                    userSide={currentMarket.side}
-                    onAddToBasket={handleAddToBasket}
-                    onOpenMarket={handleOpenMarket}
+                    <div
+                        className="market-context"
+                        style={{
+                            padding: '12px',
+                            borderBottom: '1px solid rgba(255,255,255,0.12)',
+                        }}
+                    >
+                        <div className="market-title">{currentMarket.title || 'Polymarket'}</div>
+                        <div className="market-url">{currentMarket.url}</div>
+                    </div>
+
+                    <DirectionalIdeas
+                        userSide={currentMarket.side}
+                        onAddToBasket={handleAddToBasket}
+                        onOpenMarket={handleOpenMarket}
+                    />
+                </div>
+            )}
+
+            {showResizeHandle && (
+                <div
+                    className="floating-resize-handle"
+                    onPointerDown={handleResizePointerDown}
+                    style={{
+                        cursor: isResizing ? 'se-resize' : 'se-resize',
+                    }}
                 />
-            </div>
-
-            <div
-                className="floating-resize-handle"
-                onMouseDown={handleResizeStart}
-            />
+            )}
         </div>
     );
 };

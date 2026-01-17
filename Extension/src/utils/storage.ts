@@ -28,13 +28,13 @@ export async function getOverlayState(): Promise<OverlayState> {
       console.debug('[STORAGE] Retrieved saved state:', state);
       return state;
     } else {
-      const defaultState = {
+      const defaultState: OverlayState = {
         open: false,
-        minimized: false,
         width: DEFAULT_PANEL_WIDTH,
         height: DEFAULT_PANEL_HEIGHT,
         x: window.innerWidth - DEFAULT_PANEL_WIDTH - DEFAULT_X,
         y: window.innerHeight - DEFAULT_PANEL_HEIGHT - DEFAULT_Y,
+        layoutMode: 'docked',
       };
       console.debug('[STORAGE] No saved state, returning default:', defaultState);
       return defaultState;
@@ -43,11 +43,11 @@ export async function getOverlayState(): Promise<OverlayState> {
     console.error('[STORAGE] Error getting overlay state:', error);
     return {
       open: false,
-      minimized: false,
       width: DEFAULT_PANEL_WIDTH,
       height: DEFAULT_PANEL_HEIGHT,
       x: window.innerWidth - DEFAULT_PANEL_WIDTH - DEFAULT_X,
       y: window.innerHeight - DEFAULT_PANEL_HEIGHT - DEFAULT_Y,
+      layoutMode: 'docked',
     };
   }
 }

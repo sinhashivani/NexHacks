@@ -32,3 +32,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Return true to indicate we'll respond asynchronously
   return true;
 });
+
+// Handle openUrl messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'openUrl') {
+    try {
+      const url = request.url;
+      // Validate URL format
+      if (!url || typeof url !== 'string') {
+        sendResponse({ success: false, error: 'Invalid URL' });
+        return true;
+      }
+
+      // Only allow http(s) and common protocols
+      if (!url.match(/^https?:\/\//)) {
+        sendResponse({ success: false, error: 'Unsupported protocol' });
+        return true;
+      }
+
+      // Open URL in new tab
+      chrome.tabs.create({ url, active: false });
+      console.debug('[BG] Opened URL:', url);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[BG] Error opening URL:', error);
+      sendResponse({ success: false, error: String(error) });
+    }
+    return true;
+  }
+});
+
