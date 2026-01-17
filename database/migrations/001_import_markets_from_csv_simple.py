@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from database.supabase_connection import SupabaseConnection
 
 
-def import_markets_from_csv(csv_path: str = "polymarket_events_by_tags.csv"):
+def import_markets_from_csv(csv_path: str = "data/polymarket_events_by_tags.csv"):
     """
     Import markets from CSV file into Supabase markets table
     

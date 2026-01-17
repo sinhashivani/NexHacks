@@ -13,19 +13,24 @@ A tool to help Polymarket users identify correlated trades, find parlay opportun
 
 ```
 NexHacks/
-├── docs/                          # Documentation
-│   ├── README.md                  # Documentation index
-│   ├── SUPABASE_SETUP.md         # Supabase setup guide
-│   ├── DATABASE_SCHEMA.md        # Database schema
-│   ├── IMPLEMENTATION_GUIDE.md   # Code examples
-│   └── QUICK_REFERENCE.md        # Quick reference
-├── database/                      # Database code
-│   ├── supabase_connection.py   # Supabase connection handler
-│   ├── schema.sql                # Database schema SQL
-│   ├── test_connection.py        # Connection test script
-│   └── init_db.py                # Database initialization check
-├── Polymarket API/                # API integration scripts
-└── polymarket_events_by_tags.csv # Market data
+├── api.py                         # FastAPI application (main entry point)
+├── database/                      # Database layer
+│   ├── supabase_connection.py     # Supabase connection handler
+│   ├── schema.sql                 # Database schema SQL
+│   └── migrations/                # Database migrations
+├── services/                       # Business logic services
+│   ├── trending.py                # Trending markets service
+│   └── polymarket_api.py          # Polymarket API service
+├── polymarket/                    # Polymarket API integration
+│   ├── get_markets_data.py        # Market data fetching
+│   └── get_event_data.py         # Event data fetching
+├── data/                          # Data files
+│   └── polymarket_events_by_tags.csv
+└── docs/                          # Documentation
+    ├── PROJECT_OVERVIEW.md         # Project overview
+    ├── SUPABASE_SETUP.md          # Supabase setup guide
+    ├── API_ENDPOINTS.md           # API documentation
+    └── ...
 ```
 
 ## Quick Start
@@ -45,7 +50,7 @@ Quick steps:
 ### 2. Install Dependencies
 
 ```bash
-pip install supabase python-dotenv requests pandas
+pip install fastapi uvicorn supabase python-dotenv requests
 ```
 
 ### 3. Configure Environment
@@ -63,11 +68,15 @@ DATABASE_NAME=nexhacks_polymarket
 2. Copy contents of `database/schema.sql`
 3. Paste and run in SQL Editor
 
-### 5. Test Connection
+### 5. Start the API Server
 
 ```bash
-python database/test_connection.py
+uvicorn api:app --reload
 ```
+
+The API will be available at `http://localhost:8000`
+- API Docs: `http://localhost:8000/docs`
+- Trending Markets: `http://localhost:8000/markets/trending`
 
 ## Team Roles
 
@@ -89,7 +98,19 @@ All documentation is in the [`docs/`](./docs/) directory:
 
 1. ✅ Set up Supabase (see [SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md))
 2. ✅ Run database schema SQL
-3. ⏳ Import Polymarket CSV data
-4. ⏳ Build correlation algorithms
-5. ⏳ Create API endpoints
+3. ✅ Import Polymarket CSV data
+4. ✅ Trending markets endpoint implemented
+5. ⏳ Build correlation algorithms
 6. ⏳ Build frontend tables (Related Trades, Correlated Trades)
+
+## Quick Start
+
+See [QUICK_START.md](./docs/QUICK_START.md) for detailed setup instructions.
+
+## API Endpoints
+
+- `GET /markets/trending` - Get trending/popular markets
+- `GET /markets/trending/refresh` - Refresh market metrics from Polymarket
+- `GET /ui?token_id=...` - Get market UI data
+
+See [API_ENDPOINTS.md](./docs/API_ENDPOINTS.md) for complete API documentation.

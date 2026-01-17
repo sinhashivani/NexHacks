@@ -1,8 +1,21 @@
-# Supabase Documentation Index
+# Documentation Index
 
-Complete Supabase documentation for the NexHacks Polymarket Correlation Tool.
+Complete documentation for the NexHacks Polymarket Correlation Tool.
 
 ## 📚 Documentation Files
+
+### 0. [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) ⭐ **START HERE**
+**Project context and overview** - Use this to understand what we're building.
+- Problem statement
+- Solution overview
+- Features and capabilities
+- Tech stack
+- Current status
+- Next steps
+
+**When to use**: Sharing project context, onboarding, understanding the big picture
+
+---
 
 ### 1. [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
 **Start here!** Complete setup guide for Supabase.
@@ -57,10 +70,11 @@ Quick reference cheat sheet.
 
 ## 🚀 Quick Start
 
-1. **Setup Supabase** → Read [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
-2. **Understand Schema** → Read [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)
-3. **Start Coding** → Use [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)
-4. **Quick Lookups** → Reference [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
+1. **Understand the Project** → Read [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)
+2. **Setup Supabase** → Read [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+3. **Understand Schema** → Read [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)
+4. **Start Coding** → Use [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)
+5. **Quick Lookups** → Reference [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
 
 ---
 
