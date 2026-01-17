@@ -1,0 +1,4 @@
+/* Styles injected into Shadow DOM */
+* {
+  box-sizing: border-box;
+}

@@ -1,0 +1,110 @@
+.basket-builder {
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.basket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.basket-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.btn-open-next {
+  padding: 6px 12px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-open-next:hover {
+  background: #1565c0;
+}
+
+.basket-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.basket-leg {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.basket-leg.visited {
+  opacity: 0.7;
+}
+
+.leg-content {
+  flex: 1;
+}
+
+.leg-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.leg-topic {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.leg-status {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.status-visited {
+  color: #2e7d32;
+}
+
+.status-unvisited {
+  color: #f57c00;
+}
+
+.btn-remove-leg {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #d32f2f;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.btn-remove-leg:hover {
+  background: #ffebee;
+}

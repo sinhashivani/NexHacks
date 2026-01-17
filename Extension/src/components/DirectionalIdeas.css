@@ -1,0 +1,168 @@
+.directional-ideas {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 20px;
+}
+
+.directional-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+    padding: 0 12px;
+}
+
+.directional-panel {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.directional-panel.emphasized {
+    background: #e8f5e9;
+    border-color: #4caf50;
+}
+
+.directional-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.directional-panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.directional-panel.emphasized .directional-panel-title {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.directional-count {
+    font-size: 12px;
+    background: #e0e0e0;
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: #666;
+}
+
+.directional-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.directional-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.directional-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.directional-item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.directional-category {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.directional-category.finance {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.directional-category.politics {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.directional-category.technology {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.directional-category.elections {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.directional-category.economy {
+    background: #e0f2f1;
+    color: #00695c;
+}
+
+.directional-score {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4caf50;
+    background: #e8f5e9;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.directional-reason {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.directional-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.directional-actions button {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-open {
+    background: transparent;
+    border: 1px solid #1976d2;
+    color: #1976d2;
+}
+
+.btn-open:hover {
+    background: #e3f2fd;
+}
+
+.btn-add {
+    background: #1976d2;
+    color: white;
+}
+
+.btn-add:hover {
+    background: #1565c0;
+}
