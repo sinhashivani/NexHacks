@@ -1,5 +1,4 @@
 import sys
-import os
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -23,8 +22,9 @@ from typing import Optional
 
 from polymarket.get_markets_data import ui
 from polymarket.get_similar_markets import get_similar_by_event_title
-from polymarket.get_related_traded import get_related_traded, get_related_traded_by_market_id, get_related_traded_by_event_title
+from polymarket.get_related_traded import get_related_traded
 from polymarket.news import fetch_news
+from polymarket.get_whales_data import top5_latest_trade_cards
 from services.trending import TrendingService
 from services.polymarket_api import PolymarketAPIService
 
@@ -36,7 +36,7 @@ from api.clients.gemini_client import GeminiClient
 app = FastAPI(
     title="NexHacks Polymarket Correlation Tool",
     version="1.0.0",
-    description="API for Polymarket correlation, trending, and parlay suggestions"
+    description="API for Polymarket correlation, trending, and parlay suggestions",
 )
 
 # Request logging middleware to add PNA header for Chrome Private Network Access
@@ -134,6 +134,7 @@ def get_gemini_client() -> GeminiClient:
         _gemini_client = GeminiClient()
     return _gemini_client
 
+
 @app.get("/")
 def root():
     """Root endpoint with API information"""
@@ -152,8 +153,8 @@ def root():
         "version": "1.0.0",
         "endpoints": {
             "trending": "/markets/trending",
-            "ui": "/ui"
-        }
+            "ui": "/ui",
+        },
     }
 
 @app.get("/test-cors")
@@ -184,11 +185,11 @@ def favicon():
 def get_trending_markets(
     category: Optional[str] = Query(None, description="Filter by category (e.g., politics, sports, tech)"),
     limit: int = Query(20, ge=1, le=100, description="Maximum number of results"),
-    min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum trending score")
+    min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum trending score"),
 ):
     """
     Get trending/popular markets ranked by popularity
-    
+
     Returns markets sorted by trending score based on:
     - Open interest
     - 24-hour volume
@@ -199,8 +200,9 @@ def get_trending_markets(
         markets = service.get_trending_markets(
             category=category,
             limit=limit,
-            min_score=min_score
+            min_score=min_score,
         )
+<<<<<<< HEAD
         
         # #region agent log (only in local dev)
         if os.getenv("VERCEL") is None:
@@ -212,11 +214,14 @@ def get_trending_markets(
                         f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"api/main.py:108","message":"Trending markets fetched successfully","data":{"count":len(markets)},"timestamp":int(__import__('time').time()*1000)})+"\n")
             except: pass
         # #endregion
+=======
+
+>>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
         return {
             "count": len(markets),
-            "markets": markets
+            "markets": markets,
         }
-    
+
     except Exception as e:
         # #region agent log (only in local dev)
         if os.getenv("VERCEL") is None:
@@ -233,11 +238,11 @@ def get_trending_markets(
 
 @app.get("/markets/trending/refresh")
 def refresh_trending_data(
-    limit: int = Query(100, ge=1, le=500, description="Number of markets to fetch from Polymarket")
+    limit: int = Query(100, ge=1, le=500, description="Number of markets to fetch from Polymarket"),
 ):
     """
     Refresh market metrics from Polymarket API
-    
+
     This endpoint fetches latest data from Polymarket and updates the market_metrics table.
     Call this periodically to keep trending data fresh.
     """
@@ -247,9 +252,9 @@ def refresh_trending_data(
         return {
             "success": True,
             "markets_updated": updated,
-            "message": f"Updated metrics for {updated} markets"
+            "message": f"Updated metrics for {updated} markets",
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error refreshing metrics: {str(e)}")
 
@@ -267,12 +272,18 @@ def get_ui(token_id: str = Query(..., description="CLOB token id")):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/similar")
+<<<<<<< HEAD
 async def get_similar(
     event_title: str = Query(..., description="Market question to search for"),
     use_cosine: bool = Query(True, description="Use cosine similarity scores"),
     min_similarity: float = Query(0.5, description="Minimum cosine similarity threshold"),
     use_embeddings: bool = Query(True, description="Use embedding-based semantic search (recommended)")
+=======
+def get_similar(
+    event_title: str = Query(..., description="Exact market question title"),
+>>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
 ):
     """
     Get similar markets using multiple strategies (in priority order):
@@ -708,27 +719,20 @@ async def get_similar(
 def get_related_markets(
     market_id: str,
     limit: int = Query(10, ge=1, le=50, description="Maximum number of related markets"),
-    relationship_types: Optional[str] = Query(None, description="Comma-separated relationship types: event,sector,company_pair,geographic")
+    relationship_types: Optional[str] = Query(
+        None, description="Comma-separated relationship types: event,sector,company_pair,geographic"
+    ),
 ):
     """
     Get markets related through trading patterns.
-    
-    Finds related markets based on:
-    - Same event_title (event relationship)
-    - Same tag_label/category (sector relationship)
-    - Same entities/companies (company_pair relationship)
-    - Stored relationships in related_trades table
-    
     Different from /similar which uses text similarity.
     """
     try:
         types_list = None
         if relationship_types:
             types_list = [t.strip() for t in relationship_types.split(",")]
-        
+
         data = get_related_traded(market_id=market_id, limit=limit, relationship_types=types_list)
-        if not data or data.get("count") == 0:
-            return JSONResponse(content=data)  # Return empty result, not 404
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -739,30 +743,24 @@ def get_related(
     market_id: Optional[str] = Query(None, description="Market ID"),
     event_title: Optional[str] = Query(None, description="Event title"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of related markets"),
-    relationship_types: Optional[str] = Query(None, description="Comma-separated relationship types")
+    relationship_types: Optional[str] = Query(None, description="Comma-separated relationship types"),
 ):
     """
     Get related traded markets (flexible query by market_id or event_title).
-    
-    This endpoint finds markets related through trading patterns:
-    - Same event (markets in the same event)
-    - Same sector/category
-    - Same companies/entities
-    - Geographic relationships
     """
     try:
         if not market_id and not event_title:
             raise HTTPException(status_code=400, detail="Either market_id or event_title must be provided")
-        
+
         types_list = None
         if relationship_types:
             types_list = [t.strip() for t in relationship_types.split(",")]
-        
+
         data = get_related_traded(
             market_id=market_id,
             event_title=event_title,
             limit=limit,
-            relationship_types=types_list
+            relationship_types=types_list,
         )
         return JSONResponse(content=data)
     except HTTPException:
@@ -773,24 +771,26 @@ def get_related(
 
 @app.get("/news")
 def get_news(
-    question: str = Query(..., description="Market question to search for news")
+    question: str = Query(..., description="Market question to search for news"),
 ):
     """
     Get recent news articles related to a market question.
-
     Uses GNews API to find relevant articles from the past 30 days.
     """
     try:
         articles = fetch_news(question.strip())
-        return JSONResponse(content={
-            "question": question,
-            "count": len(articles),
-            "articles": articles
-        })
+        return JSONResponse(
+            content={
+                "question": question,
+                "count": len(articles),
+                "articles": articles,
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")
 
 
+<<<<<<< HEAD
 # ============================================================================
 # ADVANCED API ENDPOINTS (Gamma, CLOB, Gemini AI)
 # ============================================================================
@@ -1136,3 +1136,26 @@ async def compute_semantic_similarity(
     except Exception as e:
         logger.error(f"[AI Similarity] Error: {e}")
         raise HTTPException(status_code=500, detail=f"Error computing similarity: {str(e)}")
+=======
+@app.get("/whales")
+def whales(
+    category: str = Query("overall", description="Category (any case)"),
+):
+    """
+    Top 5 whale latest trades.
+    Category is case-insensitive.
+    """
+    try:
+        data = top5_latest_trade_cards(category)
+        return JSONResponse(
+            content={
+                "category": category,
+                "count": len(data),
+                "cards": data,
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+>>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
