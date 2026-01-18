@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { CurrentMarket, MarketRecommendation, OverlayState } from '../types';
+import type { CurrentMarket, MarketRecommendation, OverlayState, RecommendationResponse } from '../types';
+import { getRecommendations } from '../utils/api';
+import { getLocalProfileFromStorage } from '../utils/localProfile';
 import { ContextHeader } from './ContextHeader';
 import { DirectionalIdeas } from './DirectionalIdeas';
 import './FloatingAssistant.css';
@@ -19,6 +21,13 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
     const [isResizing, setIsResizing] = useState(false);
     const [dragStart, setDragStart] = useState({ clientX: 0, clientY: 0 });
     const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, clientX: 0, clientY: 0 });
+
+    // FLAG #9: API RECOMMENDATIONS STATE
+    // ASSUMPTION: Store recommendations in local state and pass to DirectionalIdeas
+    // TEST NEEDED: Verify state updates properly when currentMarket changes
+    const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
+    const [loading, setLoading] = useState(false);
+
     const assistantRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
 
@@ -170,6 +179,62 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
         window.open(url, '_blank');
     };
 
+    /**
+     * Fetch recommendations when current market changes
+     * FLAG #10: MARKET CHANGE DETECTION
+     * ASSUMPTION: Fetch when currentMarket.url changes (not on every render)
+     * TEST NEEDED: Verify debouncing is not needed for rapid market changes
+     */
+    useEffect(() => {
+        if (!currentMarket.url) {
+            console.log('[FloatingAssistant] No current market URL, skipping recommendations fetch');
+            return;
+        }
+
+        const fetchRecommendationsForMarket = async () => {
+            try {
+                setLoading(true);
+                console.log('[FloatingAssistant] Fetching recommendations for:', currentMarket.url);
+
+                // Get local profile from storage
+                const localProfile = await getLocalProfileFromStorage();
+                console.log('[FloatingAssistant] Built local profile:', {
+                    interactions: localProfile.recent_interactions.length,
+                    topics: Object.keys(localProfile.topic_counts).length,
+                });
+
+                // Fetch recommendations from API
+                const response = await getRecommendations({
+                    primary: {
+                        url: currentMarket.url,
+                        side: currentMarket.side,
+                        amount: currentMarket.amount,
+                        trigger_type: 'user_view',
+                    },
+                    local_profile: localProfile,
+                });
+
+                console.log('[FloatingAssistant] Recommendations received:', {
+                    amplify: response.amplify?.length || 0,
+                    hedge: response.hedge?.length || 0,
+                });
+
+                setRecommendations(response);
+            } catch (err) {
+                // FLAG #3: SILENT FAILURE WITH FALLBACK
+                // ASSUMPTION: Log error but don't break UI (use SAMPLE_MARKETS fallback)
+                // TEST NEEDED: Verify DirectionalIdeas handles null recommendations
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                console.error('[FloatingAssistant] Failed to fetch recommendations:', message);
+                setRecommendations(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecommendationsForMarket();
+    }, [currentMarket.url]); // Only re-fetch when URL changes
+
     // Only show resize handle in floating mode
     const showResizeHandle = state.layoutMode === 'floating';
 
@@ -237,6 +302,9 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
                             userSide={currentMarket.side}
                             onAddToBasket={handleAddToBasket}
                             onOpenMarket={handleOpenMarket}
+                            yesList={recommendations?.amplify}
+                            noList={recommendations?.hedge}
+                            loading={loading}
                         />
                     </div>
                 </div>
@@ -266,6 +334,9 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
                         userSide={currentMarket.side}
                         onAddToBasket={handleAddToBasket}
                         onOpenMarket={handleOpenMarket}
+                        yesList={recommendations?.amplify}
+                        noList={recommendations?.hedge}
+                        loading={loading}
                     />
                 </div>
             )}

@@ -2,30 +2,85 @@ import type { RecommendationRequest, RecommendationResponse, TagsResponse } from
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND || import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
+// FLAG #1: BACKEND URL ASSUMPTION
+// ASSUMPTION: Backend runs on http://localhost:8000 or env var VITE_BACKEND/VITE_BACKEND_URL
+// TEST NEEDED: Verify actual backend URL in deployment
+// ACTUAL URL: {BACKEND_BASE_URL}
+console.log('[API] Backend URL:', BACKEND_BASE_URL);
+
+// FLAG #2: API TIMEOUT ASSUMPTION
+// ASSUMPTION: 5 second timeout is reasonable for API response
+// TEST NEEDED: Adjust if actual API response times differ
+const API_TIMEOUT_MS = 5000;
+
 export async function getRecommendations(
-  request: RecommendationRequest
+  request: RecommendationRequest,
+  options: { timeout?: number } = {}
 ): Promise<RecommendationResponse> {
-  const response = await fetch(`${BACKEND_BASE_URL}/v1/recommendations`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    throw new Error(`API error: ${response.statusText}`);
+  const timeoutMs = options.timeout || API_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    console.log('[API] Fetching recommendations:', {
+      primary: request.primary,
+      interactionCount: request.local_profile.recent_interactions.length,
+      topicCount: Object.keys(request.local_profile.topic_counts).length,
+    });
+
+    const response = await fetch(`${BACKEND_BASE_URL}/v1/recommendations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // FLAG #3: ERROR HANDLING ASSUMPTION
+    // ASSUMPTION: Non-200 responses should throw, caller handles gracefully
+    // TEST NEEDED: Verify backend returns expected status codes
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      console.error('[API] Error response:', response.status, errorText);
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('[API] Recommendations received:', {
+      amplifyCount: data.amplify?.length || 0,
+      hedgeCount: data.hedge?.length || 0,
+    });
+
+    return data;
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.error('[API] Request timeout after', timeoutMs, 'ms');
+      } else {
+        console.error('[API] Fetch error:', error.message);
+      }
+    } else {
+      console.error('[API] Unknown error:', error);
+    }
+
+    // FLAG #3: SILENT FAILURE ASSUMPTION
+    // ASSUMPTION: Errors throw, parent handles gracefully (with SAMPLE_MARKETS fallback)
+    // TEST NEEDED: Verify parent component catches and handles
+    throw error;
   }
-  
-  return response.json();
 }
 
 export async function getTags(): Promise<TagsResponse> {
   const response = await fetch(`${BACKEND_BASE_URL}/v1/tags`);
-  
+
   if (!response.ok) {
     throw new Error(`API error: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
