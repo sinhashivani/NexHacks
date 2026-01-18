@@ -45,6 +45,7 @@ $RECYCLE.BIN/
 .env.development.local
 *.env
 .envrc
+.env.vercel
 
 # IDEs and Editors
 .idea/
