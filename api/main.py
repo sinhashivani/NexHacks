@@ -24,6 +24,7 @@ from polymarket.get_similar_markets import get_similar_by_event_title
 from polymarket.get_related_traded import get_related_traded, get_related_traded_by_market_id, get_related_traded_by_event_title
 from services.trending import TrendingService
 from services.polymarket_api import PolymarketAPIService
+from polymarket.news import fetch_news
 
 app = FastAPI(
     title="NexHacks Polymarket Correlation Tool",
@@ -34,7 +35,6 @@ app = FastAPI(
 # Initialize services
 trending_service = TrendingService()
 polymarket_api = PolymarketAPIService()
-
 
 @app.get("/")
 def root():
@@ -190,6 +190,20 @@ def get_related(
             limit=limit,
             relationship_types=types_list
         )
+        return JSONResponse(content=data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/news")
+def get_news(
+    question: str = Query(..., description="Event or market question")
+):
+    try:
+        data = fetch_news(question.strip())
+        if not data:
+            raise HTTPException(status_code=404, detail="No articles found")
         return JSONResponse(content=data)
     except HTTPException:
         raise
