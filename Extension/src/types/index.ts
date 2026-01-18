@@ -55,3 +55,34 @@ export interface CurrentMarket {
   side?: 'YES' | 'NO';
   amount?: number;
 }
+
+// API Request/Response Types
+export interface LocalProfile {
+  recent_interactions: Array<{
+    title: string;
+    url: string;
+    timestamp: number;
+    side?: 'YES' | 'NO';
+  }>;
+  topic_counts: Record<string, number>;
+  entity_counts: Record<string, number>;
+}
+
+export interface RecommendationRequest {
+  primary: {
+    url: string;
+    side?: 'YES' | 'NO';
+    amount?: number;
+    trigger_type?: string;
+  };
+  local_profile: LocalProfile;
+}
+
+export interface RecommendationResponse {
+  amplify: MarketRecommendation[];
+  hedge: MarketRecommendation[];
+}
+
+export interface TagsResponse {
+  tags: string[];
+}

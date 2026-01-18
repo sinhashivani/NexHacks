@@ -9,17 +9,37 @@ from services.recommendation_engine import RecommendationEngine
 
 router = APIRouter()
 
-# Initialize clients (singleton pattern)
-gamma_client = GammaClient()
-gemini_client = GeminiClient()
-clob_client = ClobClient()
-cache_service = CacheService()
-recommendation_engine = RecommendationEngine(
-    gamma_client,
-    gemini_client,
-    clob_client,
-    cache_service
-)
+# Initialize clients (singleton pattern) - lazy loaded to avoid startup errors
+_gamma_client = None
+_gemini_client = None
+_clob_client = None
+_cache_service = None
+_recommendation_engine = None
+
+def get_clients():
+    global _gamma_client, _gemini_client, _clob_client, _cache_service, _recommendation_engine
+    if _gamma_client is None:
+        try:
+            _gamma_client = GammaClient()
+            _gemini_client = GeminiClient()
+            _clob_client = ClobClient()
+            _cache_service = CacheService()
+            _recommendation_engine = RecommendationEngine(
+                _gamma_client,
+                _gemini_client,
+                _clob_client,
+                _cache_service,
+            )
+        except Exception as e:
+            print(f"⚠️  Error initializing services: {e}")
+            raise
+    return _gamma_client, _gemini_client, _clob_client, _cache_service, _recommendation_engine
+
+gamma_client = None
+gemini_client = None
+clob_client = None
+cache_service = None
+recommendation_engine = None
 
 class MarketInteraction(BaseModel):
     timestamp: int
@@ -47,6 +67,11 @@ class RecommendationRequest(BaseModel):
 async def get_recommendations(request: RecommendationRequest):
     """Generate amplify and hedge recommendations"""
     try:
+        # Initialize clients on first use
+        global recommendation_engine
+        if recommendation_engine is None:
+            _, _, _, _, recommendation_engine = get_clients()
+        
         # Convert request to dict for engine
         primary_dict = request.primary.dict()
         local_profile_dict = request.local_profile.dict()

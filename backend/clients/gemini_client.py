@@ -1,13 +1,22 @@
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from typing import List, Dict, Any, Optional
 from config import settings
 
 class GeminiClient:
     def __init__(self):
-        if settings.gemini_api_key:
+        if genai is None or not settings.gemini_api_key:
+            self.model = None
+            return
+        try:
             genai.configure(api_key=settings.gemini_api_key)
             self.model = genai.GenerativeModel('gemini-pro')
-        else:
+        except Exception as e:
+            print(f"⚠️  Gemini client initialization failed: {e}")
+            self.model = None
             self.model = None
     
     def extract_entities(self, text: str) -> Dict[str, Any]:

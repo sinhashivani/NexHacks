@@ -6,6 +6,12 @@ interface DirectionalIdeasProps {
     userSide?: 'YES' | 'NO';
     onAddToBasket: (market: MarketRecommendation) => void;
     onOpenMarket: (url: string) => void;
+    // FLAG #9: API RESPONSE PROPS
+    // ASSUMPTION: Parent passes yesList, noList, loading props
+    // TEST NEEDED: Verify parent properly populates these props
+    yesList?: MarketRecommendation[];
+    noList?: MarketRecommendation[];
+    loading?: boolean;
 }
 
 const SAMPLE_MARKETS = [
@@ -41,7 +47,11 @@ export const DirectionalIdeas: React.FC<DirectionalIdeasProps> = ({
     userSide,
     onAddToBasket,
     onOpenMarket,
+    yesList: propYesList,
+    noList: propNoList,
+    loading = false,
 }) => {
+    // Use props if provided, otherwise fallback to SAMPLE_MARKETS
     const [scoreCache] = useState<Record<string, number>>(() => {
         const cache: Record<string, number> = {};
         SAMPLE_MARKETS.forEach(m => {
@@ -51,26 +61,50 @@ export const DirectionalIdeas: React.FC<DirectionalIdeasProps> = ({
     });
 
     const yesList = useMemo(() => {
+        // Use API recommendations if available
+        if (propYesList && propYesList.length > 0) {
+            console.log('[DirectionalIdeas] Using API yesList:', propYesList.length, 'items');
+            return propYesList;
+        }
+
+        // Fallback to sample data
+        console.log('[DirectionalIdeas] Using SAMPLE_MARKETS for yesList');
         return SAMPLE_MARKETS.slice(0, 5).map((m, idx) => ({
             ...m,
             score: scoreCache[m.id],
             reason: YES_REASONS[idx % YES_REASONS.length],
             url: `https://polymarket.com/market/${m.id}`,
         }));
-    }, [scoreCache]);
+    }, [propYesList, scoreCache]);
 
     const noList = useMemo(() => {
+        // Use API recommendations if available
+        if (propNoList && propNoList.length > 0) {
+            console.log('[DirectionalIdeas] Using API noList:', propNoList.length, 'items');
+            return propNoList;
+        }
+
+        // Fallback to sample data
+        console.log('[DirectionalIdeas] Using SAMPLE_MARKETS for noList');
         return SAMPLE_MARKETS.slice(5, 10).map((m, idx) => ({
             ...m,
             score: scoreCache[m.id],
             reason: NO_REASONS[idx % NO_REASONS.length],
             url: `https://polymarket.com/market/${m.id}`,
         }));
-    }, [scoreCache]);
+    }, [propNoList, scoreCache]);
 
     return (
         <div className="directional-ideas">
             <div className="directional-header">Directional Ideas</div>
+
+            {/* Loading State */}
+            {loading && (
+                <div className="directional-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Fetching recommendations...</span>
+                </div>
+            )}
 
             {/* YES Panel */}
             <div className={`directional-panel ${userSide === 'YES' ? 'emphasized' : ''}`}>
