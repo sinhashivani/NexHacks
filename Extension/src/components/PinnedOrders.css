@@ -1,0 +1,202 @@
+.pinned-orders-section {
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.pinned-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pinned-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.btn-pin-current {
+  padding: 6px 12px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.btn-pin-current:hover {
+  background: #1565c0;
+}
+
+.pinned-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.pinned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pinned-item {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.pinned-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.pinned-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.pinned-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.pinned-item-actions button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-reorder {
+  color: #666;
+}
+
+.btn-reorder:hover {
+  background: #e0e0e0;
+}
+
+.btn-open-pinned {
+  color: #1976d2;
+}
+
+.btn-open-pinned:hover {
+  background: #e3f2fd;
+}
+
+.btn-remove-pinned {
+  color: #d32f2f;
+}
+
+.btn-remove-pinned:hover {
+  background: #ffebee;
+}
+
+.pinned-item-url {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.pinned-item-side,
+.pinned-item-amount {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.pinned-item-notes {
+  margin: 8px 0;
+}
+
+.notes-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.notes-display > span {
+  flex: 1;
+  font-size: 12px;
+  color: #333;
+  min-height: 20px;
+}
+
+.notes-placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.btn-edit-notes {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #666;
+}
+
+.btn-edit-notes:hover {
+  background: #f0f0f0;
+}
+
+.notes-edit textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.notes-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.notes-actions button {
+  padding: 4px 12px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.notes-actions button:first-child {
+  background: #1976d2;
+  color: #ffffff;
+  border-color: #1976d2;
+}
+
+.notes-actions button:first-child:hover {
+  background: #1565c0;
+}
+
+.pinned-item-timestamp {
+  font-size: 10px;
+  color: #999;
+  margin-top: 8px;
+}
