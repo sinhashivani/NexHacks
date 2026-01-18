@@ -1,3 +1,20 @@
+import sys
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add parent directory to Python path so we can import from root-level modules
+root_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(root_dir))
+
+# Load environment variables from root .env file
+env_path = root_dir / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    # Fallback: load from current directory or environment
+    load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from typing import Optional
@@ -5,6 +22,7 @@ from typing import Optional
 from polymarket.get_markets_data import ui
 from polymarket.get_similar_markets import get_similar_by_event_title
 from polymarket.get_related_traded import get_related_traded, get_related_traded_by_market_id, get_related_traded_by_event_title
+from polymarket.news import fetch_news
 from services.trending import TrendingService
 from services.polymarket_api import PolymarketAPIService
 
@@ -17,7 +35,6 @@ app = FastAPI(
 # Initialize services
 trending_service = TrendingService()
 polymarket_api = PolymarketAPIService()
-
 
 @app.get("/")
 def root():
@@ -178,3 +195,23 @@ def get_related(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/news")
+def get_news(
+    question: str = Query(..., description="Market question to search for news")
+):
+    """
+    Get recent news articles related to a market question.
+
+    Uses GNews API to find relevant articles from the past 30 days.
+    """
+    try:
+        articles = fetch_news(question.strip())
+        return JSONResponse(content={
+            "question": question,
+            "count": len(articles),
+            "articles": articles
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")

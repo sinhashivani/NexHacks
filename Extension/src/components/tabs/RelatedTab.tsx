@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSimilarMarkets, getRelatedMarkets } from '../../utils/api';
+import { getSimilarMarkets, getRelatedMarkets, getNews, type NewsArticle } from '../../utils/api';
 import { scrapeCurrentMarket } from '../../utils/marketScraper';
 
 // Types
@@ -108,48 +108,73 @@ const formatRelevance = (market: RelatedMarket): number => {
 export const RelatedTab: React.FC = () => {
   const [currentMarket, setCurrentMarket] = useState<CurrentMarketInfo | null>(null);
   const [markets, setMarkets] = useState<RelatedMarket[]>([]);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadRelatedMarkets = async (): Promise<void> => {
+    console.log('[RelatedTab] ========================================');
+    console.log('[RelatedTab] LOADING RELATED MARKETS');
+    console.log('[RelatedTab] ========================================');
+    
     setIsLoading(true);
     setError(null);
 
     try {
       // Get current market from page
       const market = scrapeCurrentMarket();
+      console.log('[RelatedTab] Scraped market from page:', market.title);
+      console.log('[RelatedTab] Market URL:', market.url);
+      
       setCurrentMarket({ title: market.title, url: market.url });
 
       if (!market.title || market.title === 'Market') {
+        console.warn('[RelatedTab] No valid market detected');
         setError('No market detected on this page');
         setMarkets([]);
         return;
       }
+      
+      console.log('[RelatedTab] Starting data fetch with cosine similarity...');
 
-      // Try to get related markets by event title
+      // Try similar markets FIRST (uses fuzzy text matching)
+      try {
+        const similarData = await getSimilarMarkets(market.title);
+        if (similarData?.similar_markets && similarData.similar_markets.length > 0) {
+          console.log('[RelatedTab] Found similar markets:', similarData.similar_markets.length);
+          setMarkets(similarData.similar_markets);
+          
+          // Fetch news in parallel
+          try {
+            const newsData = await getNews(market.title);
+            if (newsData?.articles) {
+              console.log('[RelatedTab] Loaded news articles:', newsData.articles.length);
+              setNewsArticles(newsData.articles);
+            }
+          } catch (e) {
+            console.log('[RelatedTab] News not available:', e);
+          }
+          return;
+        }
+      } catch (e) {
+        console.log('[RelatedTab] Similar markets not available, trying related markets');
+      }
+
+      // Fallback to related markets (exact event_title match)
       try {
         const relatedData = await getRelatedMarkets(undefined, market.title, 10);
         if (relatedData?.markets && relatedData.markets.length > 0) {
           setMarkets(relatedData.markets);
-          return;
-        }
-      } catch (e) {
-        console.log('[RelatedTab] Related markets not available, trying similar markets');
-      }
-
-      // Fallback to similar markets
-      try {
-        const similarData = await getSimilarMarkets(market.title);
-        if (similarData?.similar_markets) {
-          setMarkets(similarData.similar_markets);
         } else {
           setMarkets([]);
+          setError('No related markets found');
         }
       } catch (e) {
-        console.error('[RelatedTab] Error fetching similar markets:', e);
+        console.error('[RelatedTab] Error fetching related markets:', e);
         setError('No related markets found');
         setMarkets([]);
       }
+
     } catch (e) {
       console.error('[RelatedTab] Error:', e);
       setError(e instanceof Error ? e.message : 'Failed to fetch related markets');
@@ -248,6 +273,61 @@ export const RelatedTab: React.FC = () => {
           <div className="empty-state" role="status">
             <TrendingUpIcon />
             <p>No related markets found</p>
+          </div>
+        )}
+
+        {/* News Articles Section */}
+        {!isLoading && newsArticles.length > 0 && (
+          <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>
+              📰 Related News
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {newsArticles.map((article, index) => (
+                <div 
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    padding: '12px',
+                    background: 'var(--bg-card)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  {article.image && (
+                    <img 
+                      src={article.image} 
+                      alt="" 
+                      style={{
+                        width: '80px',
+                        height: '60px',
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ 
+                      fontSize: '13px', 
+                      fontWeight: '500', 
+                      lineHeight: '1.4',
+                      marginBottom: '4px',
+                      color: 'var(--text-primary)',
+                    }}>
+                      {article.title}
+                    </p>
+                    <p style={{ 
+                      fontSize: '11px', 
+                      color: 'var(--text-muted)',
+                    }}>
+                      {article.name}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

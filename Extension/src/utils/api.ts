@@ -94,7 +94,20 @@ export async function getTrendingMarkets(category?: string, limit: number = 20):
     const url = `${BACKEND_BASE_URL}/markets/trending?${params}`;
     console.log('[API] Fetching trending markets:', url);
     
-    const response = await fetch(url);
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:94',message:'About to fetch trending markets',data:{url,method:'GET'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    const response = await fetch(url).catch((error) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:97',message:'Fetch error caught',data:{error:error.message,errorType:error.constructor.name,url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      throw error;
+    });
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:102',message:'Fetch response received',data:{status:response.status,statusText:response.statusText,ok:response.ok,headers:Object.fromEntries(response.headers.entries())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -108,22 +121,120 @@ export async function getTrendingMarkets(category?: string, limit: number = 20):
   }
 }
 
-export async function getSimilarMarkets(eventTitle: string): Promise<any> {
+export async function getSimilarMarkets(
+  eventTitle: string, 
+  useCosine: boolean = true,
+  minSimilarity: number = 0.5
+): Promise<any> {
   try {
-    const params = new URLSearchParams({ event_title: eventTitle });
+    const params = new URLSearchParams({ 
+      event_title: eventTitle,
+      use_cosine: useCosine.toString(),
+      min_similarity: minSimilarity.toString()
+    });
     const url = `${BACKEND_BASE_URL}/similar?${params}`;
-    console.log('[API] Fetching similar markets:', url);
     
-    const response = await fetch(url);
+    console.log('[API] ========================================');
+    console.log('[API] FETCHING SIMILAR MARKETS');
+    console.log('[API] ========================================');
+    console.log('[API] Event title:', eventTitle);
+    console.log('[API] Use cosine similarity:', useCosine);
+    console.log('[API] Min similarity threshold:', minSimilarity);
+    console.log('[API] Full URL:', url);
+    console.log('[API] ========================================');
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:133',message:'About to fetch similar markets',data:{url,method:'GET'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    const startTime = performance.now();
+    const response = await fetch(url).catch((error) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:135',message:'Fetch error caught',data:{error:error.message,errorType:error.constructor.name,url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      throw error;
+    });
+    const endTime = performance.now();
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/e952f87d-c0d8-4db6-a4a0-05d7096a8080',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:140',message:'Fetch response received',data:{status:response.status,statusText:response.statusText,ok:response.ok,headers:Object.fromEntries(response.headers.entries())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    
+    console.log(`[API] Request took ${(endTime - startTime).toFixed(2)}ms`);
+    
     if (!response.ok) {
+      console.error('[API] HTTP Error:', response.status, response.statusText);
       throw new Error(`API error: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('[API] Similar markets received');
+    
+    console.log('[API] ========================================');
+    console.log('[API] SIMILAR MARKETS RESPONSE');
+    console.log('[API] ========================================');
+    console.log('[API] Total markets found:', data.count || data.similar_markets?.length || 0);
+    console.log('[API] Strategy used:', data.strategy_used || 'unknown');
+    
+    if (data.similar_markets && data.similar_markets.length > 0) {
+      console.log('[API] Top 5 similar markets:');
+      data.similar_markets.slice(0, 5).forEach((market: any, idx: number) => {
+        console.log(`[API]   #${idx + 1}: ${market.question.substring(0, 60)}...`);
+        console.log(`[API]       Cosine similarity: ${market.cosine_similarity?.toFixed(4) || 'N/A'}`);
+        console.log(`[API]       Match type: ${market.match_type || 'unknown'}`);
+      });
+    } else {
+      console.warn('[API] No similar markets found');
+    }
+    
+    console.log('[API] ========================================');
+    
     return data;
   } catch (error) {
-    console.error('[API] Error fetching similar markets:', error);
+    console.error('[API] ========================================');
+    console.error('[API] ERROR FETCHING SIMILAR MARKETS');
+    console.error('[API] ========================================');
+    console.error('[API] Error:', error);
+    console.error('[API] Event title was:', eventTitle);
+    console.error('[API] ========================================');
+    throw error;
+  }
+}
+
+export interface NewsArticle {
+  title: string;
+  image?: string;
+  name: string;
+}
+
+export interface NewsResponse {
+  question: string;
+  count: number;
+  articles: NewsArticle[];
+}
+
+export const getNews = async (question: string): Promise<NewsResponse> => {
+  console.log('[API] Fetching news:', `${API_BASE_URL}/news?question=${encodeURIComponent(question)}`);
+  
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/news?question=${encodeURIComponent(question)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[API] News response:', data);
+    return data;
+  } catch (error) {
+    console.error('[API] Error fetching news:', error);
     throw error;
   }
 }

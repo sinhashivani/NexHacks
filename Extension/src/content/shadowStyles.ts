@@ -36,8 +36,8 @@ export const shadowStyles = `
   --bg-secondary: #1a1a1a;
   --bg-card: #1a1a1a;
   --bg-hover: #252525;
-  --text-primary: #ffffff;
-  --text-secondary: #d4d4d4;
+  --text-primary: #4a90ff;
+  --text-secondary: #6ba3ff;
   --text-muted: #8a8a8a;
   --border-color: #2a2a2a;
   --border-hover: #3a3a3a;
@@ -69,9 +69,9 @@ export const shadowStyles = `
 .floating-assistant {
   position: fixed;
   background: var(--bg-primary) !important;
-  border: 1px solid var(--border-color);
+  border: 4px solid var(--polyblue);
   border-radius: 1rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 0 20px rgba(74, 144, 255, 0.4), 0 0 40px rgba(74, 144, 255, 0.2), var(--shadow-lg);
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -79,6 +79,7 @@ export const shadowStyles = `
   overflow: hidden;
   pointer-events: auto;
   isolation: isolate;
+  margin: 12px;
 }
 
 .floating-header {
@@ -263,7 +264,7 @@ export const shadowStyles = `
 
 .category-pill.active {
   background: var(--polyblue) !important;
-  color: #fff;
+  color: var(--bg-primary);
   border-color: var(--polyblue);
 }
 
@@ -713,7 +714,7 @@ export const shadowStyles = `
   justify-content: center;
   padding: 32px;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-primary) !important;
   flex: 1;
   background: var(--bg-primary) !important;
   position: relative;
@@ -723,8 +724,7 @@ export const shadowStyles = `
 .empty-state svg, .error-state svg {
   width: 40px;
   height: 40px;
-  color: var(--text-muted);
-  opacity: 1;
+  color: var(--polyblue);
   margin-bottom: 12px;
   flex-shrink: 0;
 }
@@ -736,7 +736,7 @@ export const shadowStyles = `
   font-size: 14px;
   font-weight: 500;
   background: var(--polyblue) !important;
-  color: #fff;
+  color: var(--bg-primary);
   border: none;
   cursor: pointer;
   transition: background 0.2s;

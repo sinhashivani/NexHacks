@@ -103,6 +103,18 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
   const assistantRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-detect market pages and switch to Related tab
+  useEffect(() => {
+    const isMarketPage = window.location.href.includes('/event/') || 
+                         window.location.href.includes('/market/') ||
+                         currentMarket.title !== 'Market';
+    
+    if (isMarketPage && currentMarket.title && currentMarket.title !== 'Market') {
+      console.log('[FloatingAssistant] Detected market page:', currentMarket.title);
+      setActiveTab('related');
+    }
+  }, [currentMarket.title, currentMarket.url]);
+
   // Early return helper
   const isFloatingMode = (): boolean => state.layoutMode === 'floating';
 
