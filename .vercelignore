@@ -1,0 +1,70 @@
+# Files to exclude from Vercel deployment
+
+# Extension (not needed for API)
+Extension/
+Extension/**/*
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Scripts (not needed in production)
+scripts/
+tools/
+# Keep Python modules needed by api
+# !api/**/*.py
+# !polymarket/**/*.py
+# !services/**/*.py
+# !database/**/*.py
+
+# Data files
+data/
+*.csv
+
+# Test files
+test_*.py
+check_*.py
+find_*.py
+
+# Backend (old backend, not using)
+backend/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Environment files (use Vercel env vars instead)
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log
+.cursor/
+
+# Other
+render.yaml
+runtime.txt
+DEPLOYMENT_FIX.md
+QUICK_DEPLOY.md
+
+# Large unnecessary dependencies (if installed locally)
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python

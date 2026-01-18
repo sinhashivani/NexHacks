@@ -197,3 +197,5 @@ android/app/build/
 
 # Miscellaneous
 TODO.md
+.vercel
+.env*.local

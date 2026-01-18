@@ -12,3 +12,5 @@ ENV/
 .env
 .mypy_cache/
 .pytest_cache/
+
+.vercel

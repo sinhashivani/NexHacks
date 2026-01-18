@@ -1,3 +1,8 @@
+# Build tools (required for some packages)
+setuptools>=65.0.0
+wheel>=0.40.0
+
+# Core dependencies
 backports.tarfile==1.2.0
 fastapi==0.128.0
 httptools==0.7.1
@@ -14,3 +19,10 @@ uvloop==0.22.1
 watchfiles==1.1.1
 gunicorn==23.0.0
 supabase>=2.24.0
+
+# Advanced backend integrations
+httpx>=0.26.0
+google-generativeai==0.3.1
+# scipy==1.11.4  # Removed: Not used and too large (~50MB) for Vercel 250MB limit
+pydantic-settings==2.1.0
+numpy>=1.24.0

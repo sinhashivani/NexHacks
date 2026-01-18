@@ -172,18 +172,34 @@ export async function getSimilarMarkets(
     console.log('[API] ========================================');
     console.log('[API] SIMILAR MARKETS RESPONSE');
     console.log('[API] ========================================');
-    console.log('[API] Total markets found:', data.count || data.similar_markets?.length || 0);
+    console.log('[API] Raw response:', JSON.stringify(data).substring(0, 500));
+    console.log('[API] Response count field:', data.count);
+    console.log('[API] Response similar_markets array length:', data.similar_markets?.length);
     console.log('[API] Strategy used:', data.strategy_used || 'unknown');
+    
+    // Defensive: Use array length if count is missing or 0
+    const actualCount = data.similar_markets?.length || data.count || 0;
+    console.log('[API] Total markets found:', actualCount);
     
     if (data.similar_markets && data.similar_markets.length > 0) {
       console.log('[API] Top 5 similar markets:');
       data.similar_markets.slice(0, 5).forEach((market: any, idx: number) => {
-        console.log(`[API]   #${idx + 1}: ${market.question.substring(0, 60)}...`);
+        console.log(`[API]   #${idx + 1}: ${market.question?.substring(0, 60) || 'N/A'}...`);
         console.log(`[API]       Cosine similarity: ${market.cosine_similarity?.toFixed(4) || 'N/A'}`);
         console.log(`[API]       Match type: ${market.match_type || 'unknown'}`);
       });
+      
+      // Ensure count matches array length
+      if (data.count !== data.similar_markets.length) {
+        console.warn(`[API] Count mismatch: count=${data.count}, array.length=${data.similar_markets.length}`);
+        data.count = data.similar_markets.length;
+      }
     } else {
       console.warn('[API] No similar markets found');
+      // Ensure we return empty array even if count says 0
+      if (!data.similar_markets) {
+        data.similar_markets = [];
+      }
     }
     
     console.log('[API] ========================================');

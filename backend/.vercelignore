@@ -1,0 +1,47 @@
+# Exclude large/unnecessary files from Vercel deployment
+
+# Data files (should be in database, not deployed)
+*.csv
+data/
+similarity_scores.csv
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test_*.py
+*_test.py
+__pycache__/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Scripts (not needed in serverless)
+scripts/
+tools/
+
+# Old/duplicate files
+run.py
+test_server.py

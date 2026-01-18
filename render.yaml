@@ -2,8 +2,14 @@ services:
   - type: web
     name: nexhacks-api
     env: python
-    buildCommand: pip install -r api/requirements.txt
+    pythonVersion: 3.11.0
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r api/requirements.txt
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      # Add these environment variables in Render dashboard:
+      # - SUPABASE_URL (from your .env file)
+      # - SUPABASE_KEY (from your .env file)
+      # - GEMINI_API_KEY (optional, for AI features)
+      # These should be set as "Secret" environment variables in Render dashboard

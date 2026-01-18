@@ -1,139 +1,397 @@
-# Quick Testing Guide
+# 🧪 Complete Vercel Deployment Testing Guide
 
-## Setup
-1. Build the extension: `npm run build` or `yarn build`
-2. Load in Chrome: `chrome://extensions` → Load unpacked → select `Extension` folder
+## Quick Start
 
-## Test Cases
+Run the automated test script:
 
-### 1. Basic Panel Open/Close (Repeat 5x)
-- [ ] Click "Open panel" button → Panel appears on right side
-- [ ] Check: Page content is pushed left
-- [ ] Click "×" close button → Panel disappears
-- [ ] Check: Page content returns to normal width
-- [ ] Verify no console errors
-
-### 2. Docked Mode Page Push
-- [ ] Open panel → Check `document.documentElement.style.paddingRight`
-- [ ] Should be set to `404px` (380 + 24)
-- [ ] Scroll page → Panel stays fixed on right
-- [ ] Close panel → paddingRight removed
-- [ ] Open panel again → paddingRight re-applied
-
-### 3. Context Header Content
-- [ ] Open panel
-- [ ] Check header shows:
-  - [x] Current Event title
-  - [x] URL
-  - [x] Inferred slug
-  - [x] Top 4 outlets with stance badges
-  - [x] Outlet confidence percentages
-  - [x] Outlet rationale text
-  - [x] Top 2 analysts with role and quote
-
-### 4. Shadow DOM Check
-- [ ] Open DevTools → Elements
-- [ ] Find `<div id="pm-overlay-host">`
-- [ ] Expand shadow root
-- [ ] Verify only ONE shadow host exists
-- [ ] Open/close panel 10 times
-- [ ] Still only ONE shadow host (not recreated)
-
-### 5. State Persistence
-- [ ] Open panel
-- [ ] Refresh page
-- [ ] Panel should appear in same state
-- [ ] Change layout mode (if button exists)
-- [ ] Refresh page
-- [ ] Layout mode persisted
-
-### 6. Console Logs
-- [ ] Open DevTools → Console
-- [ ] Look for `[CONTENT]`, `[STORE]`, `[STORAGE]` prefixed logs
-- [ ] Should NOT see "Removing orphaned container" or "Creating new shadow root" on every interaction
-- [ ] Should see proper debounce behavior on state changes
-
-### 7. Button Interactivity
-- [ ] "Open panel" button is fully clickable
-- [ ] Hover effects work
-- [ ] Click from anywhere on button text (not just one spot)
-
-### 8. Outlet Stance Colors
-- [ ] Support outlets have green left border
-- [ ] Neutral outlets have orange left border
-- [ ] Oppose outlets have red left border
-
-### 9. Scrolling in Header
-- [ ] Large amounts of outlet/analyst data should scroll within panel
-- [ ] Header (ContextHeader) stays sticky at top
-- [ ] Content below scrolls independently
-
-### 10. Floating Mode (If Toggle Exists)
-- [ ] Switch to floating mode
-- [ ] Drag header to move panel
-- [ ] Resize from bottom-right corner
-- [ ] Switch back to docked mode
-- [ ] Panel repositions to dock position
-
-## Known Limitations (As Designed)
-
-- All outlet/analyst data is hardcoded
-- No real news API integration yet
-- Layout mode toggle requires code change (not UI button yet)
-- Outlet data doesn't change based on event/market slug (could be future feature)
-
-## Debugging Tips
-
-### Shadow DOM Not Visible?
-```javascript
-// In console:
-document.querySelector('#pm-overlay-host').shadowRoot
+```powershell
+cd c:\Users\shilo\NexHacks\NexHacks
+.\TEST_VERCEL_DEPLOYMENT.ps1
 ```
 
-### Check Current State?
-```javascript
-// In background script console:
-chrome.storage.sync.get('overlay_state', console.log)
+Or test a specific URL:
+
+```powershell
+.\TEST_VERCEL_DEPLOYMENT.ps1 -ApiUrl "https://your-url.vercel.app"
 ```
 
-### Verify Panel Position?
-```javascript
-// In page console:
-const panel = document.querySelector('#pm-overlay-host')?.shadowRoot?.querySelector('#pm-overlay-panel');
-console.log('Position:', {
-  left: panel?.style.left,
-  top: panel?.style.top,
-  right: panel?.style.right,
-  width: panel?.style.width
-});
+---
+
+## Manual Testing Steps
+
+### Step 1: Basic Connectivity (No Database Required)
+
+#### Test Root Endpoint
+
+```powershell
+Invoke-RestMethod -Uri "https://nexhacks-nu.vercel.app/"
 ```
 
-### Check Storage Writes
-- Open DevTools → Application → Chrome Storage → sync
-- Look for `overlay_state` key
-- Should only update when you stop dragging/resizing (debounce)
-- Not on every mousemove
+**Expected Response:**
+```json
+{
+  "name": "NexHacks Polymarket API",
+  "version": "1.0.0",
+  "endpoints": {
+    "trending": "/markets/trending",
+    "ui": "/ui"
+  }
+}
+```
 
-## Common Issues
+**✅ Success:** Returns API info  
+**❌ Failure:** 500 error = Check environment variables or deployment logs
 
-**Issue**: Panel doesn't appear docked on right
-- **Fix**: Check browser zoom is 100%
-- **Fix**: Check panel width isn't 0 or negative
+---
 
-**Issue**: Page content not pushed left
-- **Fix**: Check `document.documentElement.style.paddingRight` value
-- **Fix**: Browser zoom reset to 100%
+#### Test CORS Endpoint
 
-**Issue**: Multiple shadow roots
-- **Fix**: Hard refresh page (Ctrl+Shift+R)
-- **Fix**: Clear extension data and reload
+```powershell
+Invoke-RestMethod -Uri "https://nexhacks-nu.vercel.app/test-cors"
+```
 
-**Issue**: Outlet data not showing
-- **Fix**: Check `contextData.ts` is properly imported
-- **Fix**: Check network tab for API errors (shouldn't have any - all mock data)
+**Expected Response:**
+```json
+{
+  "status": "ok",
+  "cors": "enabled",
+  "message": "CORS test successful"
+}
+```
 
-## Performance Checks
+**✅ Success:** Returns CORS confirmation  
+**❌ Failure:** 500 error = Check app initialization
 
-1. **No Layout Thrashing**: Page scrolling should be smooth
-2. **No Memory Leaks**: Open/close panel 20 times → memory should stabilize
-3. **Storage Quota**: Debounce prevents hitting MAX_WRITE_OPERATIONS_PER_HOUR quota
+---
+
+#### Test Favicon Handler
+
+```powershell
+Invoke-WebRequest -Uri "https://nexhacks-nu.vercel.app/favicon.ico" -Method HEAD
+```
+
+**Expected:** Status Code 204 (No Content)  
+**✅ Success:** No more 404 errors in logs  
+**❌ Failure:** 404 = Favicon handler not working
+
+---
+
+### Step 2: Database Connectivity Tests
+
+#### Test Trending Markets
+
+```powershell
+Invoke-RestMethod -Uri "https://nexhacks-nu.vercel.app/markets/trending?limit=5"
+```
+
+**Expected Response:**
+```json
+{
+  "count": 5,
+  "markets": [
+    {
+      "question": "...",
+      "slug": "...",
+      "last_price": 0.5,
+      ...
+    }
+  ]
+}
+```
+
+**✅ Success:** Returns array of markets  
+**❌ Failure:** 
+- `500 Internal Server Error` = Database connection issue
+- Check `SUPABASE_URL` and `SUPABASE_ANON_KEY` in Vercel dashboard
+- Verify environment variables are set in **Production** environment
+
+---
+
+#### Test Similar Markets
+
+```powershell
+$title = [System.Uri]::EscapeDataString("Who will Trump nominate as Fed Chair?")
+Invoke-RestMethod -Uri "https://nexhacks-nu.vercel.app/similar?event_title=$title&limit=5"
+```
+
+**Expected Response:**
+```json
+{
+  "event_title": "Who will Trump nominate as Fed Chair?",
+  "similar_markets": [...],
+  "count": 5
+}
+```
+
+**✅ Success:** Returns similar markets  
+**❌ Failure:** 500 error = Database or similarity_scores table issue
+
+---
+
+#### Test Related Markets
+
+```powershell
+Invoke-RestMethod -Uri "https://nexhacks-nu.vercel.app/related?limit=5"
+```
+
+**✅ Success:** Returns related markets  
+**❌ Failure:** 500 error = Database issue
+
+---
+
+### Step 3: Browser CORS Test (Critical!)
+
+This is the **most important test** for extension integration.
+
+1. **Open any website** (e.g., `https://polymarket.com`)
+2. **Open DevTools** (F12) → **Console** tab
+3. **Run this:**
+
+```javascript
+fetch('https://nexhacks-nu.vercel.app/markets/trending?limit=5')
+  .then(r => r.json())
+  .then(data => {
+    console.log('✅ API Working:', data);
+    console.log('✅ Count:', data.count);
+  })
+  .catch(err => {
+    console.error('❌ Error:', err);
+  })
+```
+
+**✅ Success:** 
+- Data logged to console
+- No CORS errors
+- Returns market data
+
+**❌ Failure:**
+- `CORS policy` error = CORS middleware issue
+- `Failed to fetch` = Network/URL issue
+- `500` error = Backend issue
+- `401` error = Deployment protection (use production URL)
+
+---
+
+### Step 4: Extension Integration Test
+
+#### Update Extension (if needed)
+
+```powershell
+cd Extension
+
+# Check current URL
+Get-Content .env.production
+
+# Update if needed
+Set-Content -Path ".env.production" -Value "VITE_BACKEND=https://nexhacks-nu.vercel.app"
+
+# Rebuild
+npm run build:prod
+```
+
+#### Reload Extension
+
+1. Go to `chrome://extensions`
+2. Find "Polymarket Trade Assistant"
+3. Click **Reload** button (🔄)
+
+#### Test on Polymarket
+
+1. Visit any Polymarket market page:
+   - `https://polymarket.com/event/who-will-trump-nominate-as-fed-chair`
+2. **Open DevTools** (F12) → **Console**
+3. **Look for:**
+   - `[API] Backend URL: https://nexhacks-nu.vercel.app` ✅
+   - `[API] Fetching trending markets: ...` ✅
+   - `[API] Trending markets received: ...` ✅
+   - No CORS errors ✅
+   - Extension overlay loads with data ✅
+
+**✅ Success:** Extension loads data from production API  
+**❌ Failure:** 
+- `Failed to fetch` = CORS or URL issue
+- `500` error = Backend issue
+- No data = Database/API issue
+
+---
+
+## Advanced Testing
+
+### Test All Endpoints
+
+```powershell
+$baseUrl = "https://nexhacks-nu.vercel.app"
+
+# Test all endpoints
+$endpoints = @(
+    "/",
+    "/test-cors",
+    "/markets/trending?limit=3",
+    "/gamma/tags",
+    "/similar?event_title=test&limit=3"
+)
+
+foreach ($endpoint in $endpoints) {
+    Write-Host "Testing: $endpoint" -ForegroundColor Cyan
+    try {
+        $result = Invoke-RestMethod -Uri "$baseUrl$endpoint"
+        Write-Host "  ✅ Success" -ForegroundColor Green
+    } catch {
+        Write-Host "  ❌ Failed: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    Write-Host ""
+}
+```
+
+---
+
+### Check Response Times
+
+```powershell
+$url = "https://nexhacks-nu.vercel.app/markets/trending?limit=5"
+
+$times = @()
+1..5 | ForEach-Object {
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        Invoke-RestMethod -Uri $url | Out-Null
+        $stopwatch.Stop()
+        $times += $stopwatch.ElapsedMilliseconds
+        Write-Host "Request $_: $($stopwatch.ElapsedMilliseconds)ms"
+    } catch {
+        Write-Host "Request $_: FAILED"
+    }
+}
+
+$avg = ($times | Measure-Object -Average).Average
+Write-Host "Average response time: $([math]::Round($avg, 2))ms" -ForegroundColor Cyan
+```
+
+**Expected:** < 2 seconds for trending markets
+
+---
+
+## Troubleshooting
+
+### If Root Endpoint Returns 500
+
+1. **Check Vercel Logs:**
+   - Go to Vercel Dashboard → Your Project → Deployments
+   - Click on latest deployment → "Function Logs"
+   - Look for Python errors
+
+2. **Verify Environment Variables:**
+   - Settings → Environment Variables
+   - Must include:
+     - `SUPABASE_URL`
+     - `SUPABASE_ANON_KEY`
+   - Must be set for **Production** environment
+
+3. **Check Variable Names:**
+   - Use `SUPABASE_ANON_KEY` (not `SUPABASE_KEY`)
+   - Case-sensitive!
+
+---
+
+### If Database Endpoints Return 500
+
+1. **Test Supabase Connection Locally:**
+   ```powershell
+   python -c "from database.supabase_connection import SupabaseConnection; c = SupabaseConnection(); print('✅ Connected')"
+   ```
+
+2. **Verify Keys:**
+   - Go to Supabase Dashboard → Settings → API
+   - Copy **anon public key** (not service_role)
+   - Use this as `SUPABASE_ANON_KEY`
+
+3. **Check Database Tables:**
+   - Verify `markets` table exists
+   - Verify `similarity_scores` table exists (if using similarity features)
+
+---
+
+### If CORS Errors Occur
+
+1. **Verify CORS Middleware:**
+   - Already configured in `api/main.py` ✅
+   - Should allow all origins: `allow_origins=["*"]`
+
+2. **Check Browser Console:**
+   - Look for exact error message
+   - Check if it's a preflight (OPTIONS) request issue
+
+3. **Test with curl:**
+   ```powershell
+   curl -H "Origin: https://polymarket.com" -H "Access-Control-Request-Method: GET" -X OPTIONS "https://nexhacks-nu.vercel.app/markets/trending"
+   ```
+
+---
+
+### If Extension Can't Connect
+
+1. **Verify Environment Variable:**
+   ```powershell
+   cd Extension
+   Get-Content .env.production
+   # Should show: VITE_BACKEND=https://nexhacks-nu.vercel.app
+   ```
+
+2. **Rebuild Extension:**
+   ```powershell
+   npm run build:prod
+   ```
+
+3. **Reload Extension:**
+   - Go to `chrome://extensions`
+   - Click Reload
+
+4. **Check Browser Console:**
+   - Look for `[API] Backend URL:` log
+   - Verify it shows the production URL
+
+---
+
+## Success Checklist
+
+- [ ] Root endpoint returns 200 OK
+- [ ] CORS test endpoint works
+- [ ] Trending markets endpoint returns data
+- [ ] Similar markets endpoint works
+- [ ] No CORS errors in browser console
+- [ ] Extension loads data from production API
+- [ ] Response times are reasonable (< 2 seconds)
+- [ ] All endpoints respond correctly
+
+---
+
+## Quick Reference
+
+**Production URL:** `https://nexhacks-nu.vercel.app`
+
+**Key Endpoints:**
+- `/` - Root/health check
+- `/test-cors` - CORS verification
+- `/markets/trending` - Trending markets
+- `/similar` - Similar markets
+- `/related` - Related markets
+- `/gamma/tags` - Market tags
+- `/clob/price/{token_id}` - Price data
+
+**Environment Variables Needed:**
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `GEMINI_API_KEY` (optional)
+
+---
+
+## Next Steps After Testing
+
+1. ✅ If all tests pass → Extension is ready for production use
+2. ✅ Monitor Vercel logs for any errors
+3. ✅ Set up Vercel monitoring/alerts (optional)
+4. ✅ Share production URL with team
+
+---
+
+Good luck! 🚀

@@ -1,0 +1,27 @@
+[project]
+name = "nexhacks-api"
+version = "1.0.0"
+requires-python = ">=3.11"
+description = "NexHacks Polymarket API - FastAPI backend"
+dependencies = [
+    "fastapi==0.128.0",
+    "uvicorn==0.40.0",
+    "python-dotenv==1.2.1",
+    "supabase>=2.24.0",
+    "httpx>=0.26.0",
+    "google-generativeai==0.3.1",
+    # "scipy==1.11.4",  # Removed: Not used and too large for Vercel
+    "pydantic-settings==2.1.0",
+    "requests>=2.31.0",
+    "sqlalchemy==2.0.45",
+    "psycopg2-binary==2.9.11",
+    "numpy>=1.24.0",
+]
+
+[tool.setuptools]
+packages = ["api", "polymarket", "services", "database"]
+include-package-data = true
+
+[build-system]
+requires = ["setuptools>=65.0.0", "wheel>=0.40.0"]
+build-backend = "setuptools.build_meta"
