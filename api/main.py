@@ -1,4 +1,6 @@
 import sys
+import os
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -202,21 +204,7 @@ def get_trending_markets(
             limit=limit,
             min_score=min_score,
         )
-<<<<<<< HEAD
-        
-        # #region agent log (only in local dev)
-        if os.getenv("VERCEL") is None:
-            import json
-            try:
-                debug_log_path = Path(__file__).parent.parent / ".cursor" / "debug.log"
-                if debug_log_path.parent.exists():
-                    with open(debug_log_path, 'a') as f:
-                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"api/main.py:108","message":"Trending markets fetched successfully","data":{"count":len(markets)},"timestamp":int(__import__('time').time()*1000)})+"\n")
-            except: pass
-        # #endregion
-=======
 
->>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
         return {
             "count": len(markets),
             "markets": markets,
@@ -274,16 +262,11 @@ def get_ui(token_id: str = Query(..., description="CLOB token id")):
 
 
 @app.get("/similar")
-<<<<<<< HEAD
 async def get_similar(
     event_title: str = Query(..., description="Market question to search for"),
     use_cosine: bool = Query(True, description="Use cosine similarity scores"),
     min_similarity: float = Query(0.5, description="Minimum cosine similarity threshold"),
     use_embeddings: bool = Query(True, description="Use embedding-based semantic search (recommended)")
-=======
-def get_similar(
-    event_title: str = Query(..., description="Exact market question title"),
->>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
 ):
     """
     Get similar markets using multiple strategies (in priority order):
@@ -786,11 +769,22 @@ def get_news(
                 "articles": articles,
             }
         )
+    except RuntimeError as e:
+        # Missing API key - return empty result instead of 500
+        if "Missing GNEWS_API_KEY" in str(e):
+            return JSONResponse(
+                content={
+                    "question": question,
+                    "count": 0,
+                    "articles": [],
+                    "error": "News API key not configured"
+                }
+            )
+        raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")
 
 
-<<<<<<< HEAD
 # ============================================================================
 # ADVANCED API ENDPOINTS (Gamma, CLOB, Gemini AI)
 # ============================================================================
@@ -1136,7 +1130,8 @@ async def compute_semantic_similarity(
     except Exception as e:
         logger.error(f"[AI Similarity] Error: {e}")
         raise HTTPException(status_code=500, detail=f"Error computing similarity: {str(e)}")
-=======
+
+
 @app.get("/whales")
 def whales(
     category: str = Query("overall", description="Category (any case)"),
@@ -1158,4 +1153,3 @@ def whales(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 5b4eb127f98f9fae9d1a5fab8cf0a828fb987f5c
