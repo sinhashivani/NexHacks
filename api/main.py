@@ -2,18 +2,11 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-<<<<<<< HEAD
 from polymarket.get_markets_data import ui
 from polymarket.get_similar_markets import get_similar_by_event_title
 from polymarket.get_related_traded import get_related_traded, get_related_traded_by_market_id, get_related_traded_by_event_title
 from services.trending import TrendingService
 from services.polymarket_api import PolymarketAPIService
-=======
-from Polymarket_API.get_markets_data import ui
-from Polymarket_API.get_similar_markets import get_similar_by_event_title
-from Polymarket_API.news import fetch_news
-
->>>>>>> 01df126405e4250096e12c73466eaf2e39b7dce5
 
 app = FastAPI(
     title="NexHacks Polymarket Correlation Tool",
@@ -118,7 +111,6 @@ def get_similar(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-<<<<<<< HEAD
 
 
 @app.get("/markets/{market_id}/related")
@@ -181,17 +173,6 @@ def get_related(
             limit=limit,
             relationship_types=types_list
         )
-=======
-    
-@app.get("/news")
-def get_news(
-    question: str = Query(..., description="Event or market question")
-):
-    try:
-        data = fetch_news(question.strip())
-        if not data:
-            raise HTTPException(status_code=404, detail="No articles found")
->>>>>>> 01df126405e4250096e12c73466eaf2e39b7dce5
         return JSONResponse(content=data)
     except HTTPException:
         raise

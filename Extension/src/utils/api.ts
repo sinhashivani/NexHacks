@@ -69,7 +69,7 @@ export async function getRecommendations(
     }
 
     // FLAG #3: SILENT FAILURE ASSUMPTION
-    // ASSUMPTION: Errors throw, parent handles gracefully (with SAMPLE_MARKETS fallback)
+    // ASSUMPTION: Errors throw, parent handles gracefully
     // TEST NEEDED: Verify parent component catches and handles
     throw error;
   }
@@ -83,4 +83,71 @@ export async function getTags(): Promise<TagsResponse> {
   }
 
   return response.json();
+}
+
+export async function getTrendingMarkets(category?: string, limit: number = 20): Promise<any> {
+  try {
+    const params = new URLSearchParams();
+    if (category && category !== 'all') params.append('category', category);
+    params.append('limit', limit.toString());
+    
+    const url = `${BACKEND_BASE_URL}/markets/trending?${params}`;
+    console.log('[API] Fetching trending markets:', url);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[API] Trending markets received:', data.count);
+    return data;
+  } catch (error) {
+    console.error('[API] Error fetching trending markets:', error);
+    throw error;
+  }
+}
+
+export async function getSimilarMarkets(eventTitle: string): Promise<any> {
+  try {
+    const params = new URLSearchParams({ event_title: eventTitle });
+    const url = `${BACKEND_BASE_URL}/similar?${params}`;
+    console.log('[API] Fetching similar markets:', url);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[API] Similar markets received');
+    return data;
+  } catch (error) {
+    console.error('[API] Error fetching similar markets:', error);
+    throw error;
+  }
+}
+
+export async function getRelatedMarkets(marketId?: string, eventTitle?: string, limit: number = 10): Promise<any> {
+  try {
+    const params = new URLSearchParams();
+    if (marketId) params.append('market_id', marketId);
+    if (eventTitle) params.append('event_title', eventTitle);
+    params.append('limit', limit.toString());
+    
+    const url = `${BACKEND_BASE_URL}/related?${params}`;
+    console.log('[API] Fetching related markets:', url);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[API] Related markets received:', data.count);
+    return data;
+  } catch (error) {
+    console.error('[API] Error fetching related markets:', error);
+    throw error;
+  }
 }

@@ -1,355 +1,329 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { CurrentMarket, MarketRecommendation, OverlayState, RecommendationResponse } from '../types';
-import { getRecommendations } from '../utils/api';
-import { getLocalProfileFromStorage } from '../utils/localProfile';
-import { ContextHeader } from './ContextHeader';
-import { DirectionalIdeas } from './DirectionalIdeas';
+import type { CurrentMarket, OverlayState } from '../types';
+import { TrendingTab } from './tabs/TrendingTab';
+import { RelatedTab } from './tabs/RelatedTab';
 import './FloatingAssistant.css';
 
+// Types
+type TabId = 'trending' | 'related';
+
 interface FloatingAssistantProps {
-    currentMarket: CurrentMarket;
-    state: OverlayState;
-    onStateChange: (state: Partial<OverlayState>) => void;
+  currentMarket: CurrentMarket;
+  state: OverlayState;
+  onStateChange: (state: Partial<OverlayState>) => void;
 }
 
+interface DragState {
+  clientX: number;
+  clientY: number;
+}
+
+interface ResizeState {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  clientX: number;
+  clientY: number;
+}
+
+// Icon Components
+const NexHacksLogo: React.FC = () => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    width="20" 
+    height="20" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+    <path d="M2 17l10 5 10-5" opacity="0.6" />
+    <path d="M2 12l10 5 10-5" opacity="0.8" />
+  </svg>
+);
+
+const TrendingNavIcon: React.FC = () => (
+  <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="m22 7-8.5 8.5-5-5L2 17" />
+    <path d="M16 7h6v6" />
+  </svg>
+);
+
+const RelatedNavIcon: React.FC = () => (
+  <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
+// Main Component
 export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
-    currentMarket,
-    state,
-    onStateChange,
+  currentMarket,
+  state,
+  onStateChange,
 }) => {
-    const [isDragging, setIsDragging] = useState(false);
-    const [isResizing, setIsResizing] = useState(false);
-    const [dragStart, setDragStart] = useState({ clientX: 0, clientY: 0 });
-    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, clientX: 0, clientY: 0 });
+  const [activeTab, setActiveTab] = useState<TabId>('trending');
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<DragState>({ clientX: 0, clientY: 0 });
+  const [resizeStart, setResizeStart] = useState<ResizeState>({ 
+    x: 0, 
+    y: 0, 
+    width: 0, 
+    height: 0, 
+    clientX: 0, 
+    clientY: 0 
+  });
 
-    // FLAG #9: API RECOMMENDATIONS STATE
-    // ASSUMPTION: Store recommendations in local state and pass to DirectionalIdeas
-    // TEST NEEDED: Verify state updates properly when currentMarket changes
-    const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
-    const [loading, setLoading] = useState(false);
+  const assistantRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
-    const assistantRef = useRef<HTMLDivElement>(null);
-    const headerRef = useRef<HTMLDivElement>(null);
+  // Early return helper
+  const isFloatingMode = (): boolean => state.layoutMode === 'floating';
 
-    /**
-     * Handle pointer down on header - only for floating mode drag
-     */
-    const handleHeaderPointerDown = (e: React.PointerEvent) => {
-        // Skip if clicking action buttons
-        if ((e.target as HTMLElement).closest('.floating-actions')) {
-            return;
-        }
+  // Event Handlers - Drag
+  const handleHeaderPointerDown = (e: React.PointerEvent): void => {
+    if ((e.target as HTMLElement).closest('.floating-actions')) return;
+    if (!isFloatingMode()) return;
+    
+    setIsDragging(true);
+    setDragStart({ clientX: e.clientX, clientY: e.clientY });
+    if (headerRef.current) {
+      headerRef.current.setPointerCapture(e.pointerId);
+    }
+  };
 
-        // Only allow drag in floating mode
-        if (state.layoutMode !== 'floating') {
-            return;
-        }
+  useEffect(() => {
+    if (!isDragging || !isFloatingMode()) return;
 
-        console.debug('[CONTENT] Drag started');
-        setIsDragging(true);
-        setDragStart({ clientX: e.clientX, clientY: e.clientY });
+    const handlePointerMove = (e: PointerEvent): void => {
+      const deltaX = e.clientX - dragStart.clientX;
+      const deltaY = e.clientY - dragStart.clientY;
+      const newX = Math.max(0, Math.min(state.x + deltaX, window.innerWidth - state.width));
+      const newY = Math.max(0, Math.min(state.y + deltaY, window.innerHeight - state.height));
+      
+      onStateChange({ x: newX, y: newY });
+      setDragStart({ clientX: e.clientX, clientY: e.clientY });
+    };
 
-        // Capture pointer for this element
+    const handlePointerUp = (e: PointerEvent): void => {
+      setIsDragging(false);
+      try {
         if (headerRef.current) {
-            headerRef.current.setPointerCapture(e.pointerId);
+          headerRef.current.releasePointerCapture(e.pointerId);
         }
+      } catch (_) {
+        // Ignore errors from releasePointerCapture
+      }
     };
 
-    /**
-     * Handle pointer move during drag - update position
-     */
-    useEffect(() => {
-        if (!isDragging || !assistantRef.current || state.layoutMode !== 'floating') return;
+    document.addEventListener('pointermove', handlePointerMove, { passive: true });
+    document.addEventListener('pointerup', handlePointerUp, { passive: true });
 
-        const handlePointerMove = (e: PointerEvent) => {
-            const deltaX = e.clientX - dragStart.clientX;
-            const deltaY = e.clientY - dragStart.clientY;
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [isDragging, dragStart, state, onStateChange]);
 
-            const newX = state.x + deltaX;
-            const newY = state.y + deltaY;
+  // Event Handlers - Resize
+  const handleResizePointerDown = (e: React.PointerEvent): void => {
+    if (!isFloatingMode()) return;
+    
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeStart({ 
+      x: state.x, 
+      y: state.y, 
+      width: state.width, 
+      height: state.height, 
+      clientX: e.clientX, 
+      clientY: e.clientY 
+    });
+    
+    if (assistantRef.current) {
+      assistantRef.current.setPointerCapture(e.pointerId);
+    }
+  };
 
-            // Constrain to viewport
-            const constrainedX = Math.max(0, Math.min(newX, window.innerWidth - state.width));
-            const constrainedY = Math.max(0, Math.min(newY, window.innerHeight - state.height));
+  useEffect(() => {
+    if (!isResizing || !isFloatingMode()) return;
 
-            onStateChange({
-                x: constrainedX,
-                y: constrainedY,
-            });
+    const handlePointerMove = (e: PointerEvent): void => {
+      const newWidth = Math.max(280, Math.min(560, resizeStart.width - (e.clientX - resizeStart.clientX)));
+      const newHeight = Math.max(200, resizeStart.height + (e.clientY - resizeStart.clientY));
+      onStateChange({ width: newWidth, height: newHeight });
+    };
 
-            setDragStart({ clientX: e.clientX, clientY: e.clientY });
-        };
-
-        const handlePointerUp = (e: PointerEvent) => {
-            console.debug('[CONTENT] Drag ended');
-            setIsDragging(false);
-            if (headerRef.current) {
-                try {
-                    headerRef.current.releasePointerCapture(e.pointerId);
-                } catch (err) {
-                    // Already released
-                }
-            }
-        };
-
-        document.addEventListener('pointermove', handlePointerMove, { passive: true });
-        document.addEventListener('pointerup', handlePointerUp, { passive: true });
-
-        return () => {
-            document.removeEventListener('pointermove', handlePointerMove);
-            document.removeEventListener('pointerup', handlePointerUp);
-        };
-    }, [isDragging, dragStart, state, onStateChange]);
-
-    /**
-     * Handle pointer down on resize handle - only for floating mode
-     */
-    const handleResizePointerDown = (e: React.PointerEvent) => {
-        if (state.layoutMode !== 'floating') {
-            return;
-        }
-
-        e.preventDefault();
-        console.debug('[CONTENT] Resize started');
-        setIsResizing(true);
-        setResizeStart({
-            x: state.x,
-            y: state.y,
-            width: state.width,
-            height: state.height,
-            clientX: e.clientX,
-            clientY: e.clientY,
-        });
-
+    const handlePointerUp = (e: PointerEvent): void => {
+      setIsResizing(false);
+      try {
         if (assistantRef.current) {
-            assistantRef.current.setPointerCapture(e.pointerId);
+          assistantRef.current.releasePointerCapture(e.pointerId);
         }
+      } catch (_) {
+        // Ignore errors from releasePointerCapture
+      }
     };
 
-    /**
-     * Handle pointer move during resize
-     */
-    useEffect(() => {
-        if (!isResizing || state.layoutMode !== 'floating') return;
+    document.addEventListener('pointermove', handlePointerMove, { passive: true });
+    document.addEventListener('pointerup', handlePointerUp, { passive: true });
 
-        const handlePointerMove = (e: PointerEvent) => {
-            const deltaX = e.clientX - resizeStart.clientX;
-            const deltaY = e.clientY - resizeStart.clientY;
-
-            const newWidth = Math.max(280, Math.min(560, resizeStart.width - deltaX));
-            const newHeight = Math.max(200, resizeStart.height + deltaY);
-
-            onStateChange({
-                width: newWidth,
-                height: newHeight,
-            });
-        };
-
-        const handlePointerUp = (e: PointerEvent) => {
-            console.debug('[CONTENT] Resize ended');
-            setIsResizing(false);
-            if (assistantRef.current) {
-                try {
-                    assistantRef.current.releasePointerCapture(e.pointerId);
-                } catch (err) {
-                    // Already released
-                }
-            }
-        };
-
-        document.addEventListener('pointermove', handlePointerMove, { passive: true });
-        document.addEventListener('pointerup', handlePointerUp, { passive: true });
-
-        return () => {
-            document.removeEventListener('pointermove', handlePointerMove);
-            document.removeEventListener('pointerup', handlePointerUp);
-        };
-    }, [isResizing, resizeStart, state, onStateChange]);
-
-    const handleClose = () => {
-        console.debug('[CONTENT] Close button clicked');
-        onStateChange({ open: false });
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
     };
+  }, [isResizing, resizeStart, state, onStateChange]);
 
-    const handleAddToBasket = (market: MarketRecommendation) => {
-        console.log('Add to basket:', market);
-    };
+  // Event Handlers - UI Actions
+  const handleCloseClick = (): void => {
+    onStateChange({ open: false });
+  };
 
-    const handleOpenMarket = (url: string) => {
-        window.open(url, '_blank');
-    };
+  const handleCloseKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onStateChange({ open: false });
+    }
+  };
 
-    /**
-     * Fetch recommendations when current market changes
-     * FLAG #10: MARKET CHANGE DETECTION
-     * ASSUMPTION: Fetch when currentMarket.url changes (not on every render)
-     * TEST NEEDED: Verify debouncing is not needed for rapid market changes
-     */
-    useEffect(() => {
-        if (!currentMarket.url) {
-            console.log('[FloatingAssistant] No current market URL, skipping recommendations fetch');
-            return;
-        }
+  const handleTabClick = (tabId: TabId): void => {
+    setActiveTab(tabId);
+  };
 
-        const fetchRecommendationsForMarket = async () => {
-            try {
-                setLoading(true);
-                console.log('[FloatingAssistant] Fetching recommendations for:', currentMarket.url);
+  const handleTabKeyDown = (e: React.KeyboardEvent, tabId: TabId): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setActiveTab(tabId);
+    }
+  };
 
-                // Get local profile from storage
-                const localProfile = await getLocalProfileFromStorage();
-                console.log('[FloatingAssistant] Built local profile:', {
-                    interactions: localProfile.recent_interactions.length,
-                    topics: Object.keys(localProfile.topic_counts).length,
-                });
 
-                // Fetch recommendations from API
-                const response = await getRecommendations({
-                    primary: {
-                        url: currentMarket.url,
-                        side: currentMarket.side,
-                        amount: currentMarket.amount,
-                        trigger_type: 'user_view',
-                    },
-                    local_profile: localProfile,
-                });
+  // Computed Values
+  const showResizeHandle = isFloatingMode() && !state.minimized;
+  const headerCursor = isFloatingMode() ? (isDragging ? 'grabbing' : 'grab') : 'default';
+  const assistantCursor = isDragging ? 'grabbing' : isResizing ? 'se-resize' : 'auto';
 
-                console.log('[FloatingAssistant] Recommendations received:', {
-                    amplify: response.amplify?.length || 0,
-                    hedge: response.hedge?.length || 0,
-                });
-
-                setRecommendations(response);
-            } catch (err) {
-                // FLAG #3: SILENT FAILURE WITH FALLBACK
-                // ASSUMPTION: Log error but don't break UI (use SAMPLE_MARKETS fallback)
-                // TEST NEEDED: Verify DirectionalIdeas handles null recommendations
-                const message = err instanceof Error ? err.message : 'Unknown error';
-                console.error('[FloatingAssistant] Failed to fetch recommendations:', message);
-                setRecommendations(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchRecommendationsForMarket();
-    }, [currentMarket.url]); // Only re-fetch when URL changes
-
-    // Only show resize handle in floating mode
-    const showResizeHandle = state.layoutMode === 'floating';
-
-    // Determine if we should use two-column layout (only in docked mode with sufficient width)
-    const useTwoColumnLayout = state.layoutMode === 'docked' && state.width >= 600;
-
-    return (
-        <div
-            ref={assistantRef}
-            className="floating-assistant"
-            style={{
-                width: `${state.width}px`,
-                height: state.layoutMode === 'docked' ? 'auto' : `${state.height}px`,
-                cursor: isDragging ? 'grabbing' : isResizing ? 'se-resize' : 'auto',
-                userSelect: isDragging ? 'none' : 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
-        >
-            <div
-                ref={headerRef}
-                className="floating-header"
-                onPointerDown={handleHeaderPointerDown}
-                style={{
-                    cursor: state.layoutMode === 'floating' ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                }}
-            >
-                <h2>Trade Assistant</h2>
-                <div className="floating-actions">
-                    <button className="btn-action btn-close" onClick={handleClose} title="Close">
-                        ✕
-                    </button>
-                </div>
-            </div>
-
-            {/* Two-Column Layout */}
-            {useTwoColumnLayout ? (
-                <div
-                    style={{
-                        display: 'flex',
-                        flex: 1,
-                        overflow: 'hidden',
-                    }}
-                >
-                    {/* Left Column: Context (30%) */}
-                    <div
-                        style={{
-                            width: '30%',
-                            overflowY: 'auto',
-                            borderRight: '1px solid rgba(255,255,255,0.08)',
-                        }}
-                    >
-                        <ContextHeader />
-                    </div>
-
-                    {/* Right Column: Similar Trades (70%) */}
-                    <div
-                        style={{
-                            width: '70%',
-                            overflowY: 'auto',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <DirectionalIdeas
-                            userSide={currentMarket.side}
-                            onAddToBasket={handleAddToBasket}
-                            onOpenMarket={handleOpenMarket}
-                            yesList={recommendations?.amplify}
-                            noList={recommendations?.hedge}
-                            loading={loading}
-                        />
-                    </div>
-                </div>
-            ) : (
-                /* Single Column Layout (default) */
-                <div
-                    className="floating-content"
-                    style={{
-                        flex: 1,
-                        overflow: 'auto',
-                    }}
-                >
-                    <ContextHeader />
-
-                    <div
-                        className="market-context"
-                        style={{
-                            padding: '12px',
-                            borderBottom: '1px solid rgba(255,255,255,0.12)',
-                        }}
-                    >
-                        <div className="market-title">{currentMarket.title || 'Polymarket'}</div>
-                        <div className="market-url">{currentMarket.url}</div>
-                    </div>
-
-                    <DirectionalIdeas
-                        userSide={currentMarket.side}
-                        onAddToBasket={handleAddToBasket}
-                        onOpenMarket={handleOpenMarket}
-                        yesList={recommendations?.amplify}
-                        noList={recommendations?.hedge}
-                        loading={loading}
-                    />
-                </div>
-            )}
-
-            {showResizeHandle && (
-                <div
-                    className="floating-resize-handle"
-                    onPointerDown={handleResizePointerDown}
-                    style={{
-                        cursor: isResizing ? 'se-resize' : 'se-resize',
-                    }}
-                />
-            )}
+  // Main Panel
+  return (
+    <div
+      ref={assistantRef}
+      className="floating-assistant"
+      style={{
+        width: `${state.width}px`,
+        height: state.layoutMode === 'docked' ? 'auto' : `${state.height}px`,
+        cursor: assistantCursor,
+        userSelect: isDragging ? 'none' : 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      role="dialog"
+      aria-label="NexHacks Polymarket Assistant"
+    >
+      {/* Header */}
+      <div
+        ref={headerRef}
+        className="floating-header"
+        onPointerDown={handleHeaderPointerDown}
+        style={{ cursor: headerCursor }}
+        role="banner"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="nexhacks-logo" aria-label="NexHacks logo">
+            <NexHacksLogo />
+          </div>
+          <div>
+            <h2 className="nexhacks-title">NexHacks</h2>
+            <p className="nexhacks-subtitle">Polymarket Companion</p>
+          </div>
         </div>
-    );
+        <div className="floating-actions">
+            <button
+              className="btn-action btn-close"
+              onClick={handleCloseClick}
+              onKeyDown={handleCloseKeyDown}
+              aria-label="Close assistant"
+              title="Close"
+              tabIndex={0}
+            >
+              ✕
+            </button>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <nav className="nexhacks-nav" role="tablist" aria-label="Market tabs">
+        <button
+          className={`nav-tab ${activeTab === 'trending' ? 'active' : ''}`}
+          onClick={() => handleTabClick('trending')}
+          onKeyDown={(e) => handleTabKeyDown(e, 'trending')}
+          role="tab"
+          aria-selected={activeTab === 'trending'}
+          aria-controls="trending-panel"
+          aria-label="Trending markets"
+          tabIndex={0}
+        >
+          <TrendingNavIcon /> Trending
+        </button>
+        <button
+          className={`nav-tab ${activeTab === 'related' ? 'active' : ''}`}
+          onClick={() => handleTabClick('related')}
+          onKeyDown={(e) => handleTabKeyDown(e, 'related')}
+          role="tab"
+          aria-selected={activeTab === 'related'}
+          aria-controls="related-panel"
+          aria-label="Related markets"
+          tabIndex={0}
+        >
+          <RelatedNavIcon /> Related
+        </button>
+      </nav>
+
+      {/* Tab Content */}
+      <main className="tab-content" role="tabpanel" id={`${activeTab}-panel`}>
+        {activeTab === 'trending' && <TrendingTab />}
+        {activeTab === 'related' && <RelatedTab />}
+      </main>
+
+      {/* Resize Handle */}
+      {showResizeHandle && (
+        <div
+          className="floating-resize-handle"
+          onPointerDown={handleResizePointerDown}
+          style={{ cursor: 'se-resize' }}
+          role="separator"
+          aria-label="Resize assistant"
+          aria-valuemin={200}
+          aria-valuemax={800}
+          aria-valuenow={state.height}
+          tabIndex={0}
+        />
+      )}
+    </div>
+  );
 };

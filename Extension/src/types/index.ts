@@ -35,6 +35,7 @@ export interface BasketLeg {
 
 export interface OverlayState {
   open: boolean;
+  minimized: boolean;
   width: number;
   height: number;
   x: number;

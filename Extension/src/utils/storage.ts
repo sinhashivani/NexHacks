@@ -17,9 +17,34 @@ const MAX_PANEL_WIDTH = 560;
 const DEFAULT_X = 16;
 const DEFAULT_Y = 16;
 
+// Helper function to check if extension context is valid
+function isExtensionContextValid(): boolean {
+  try {
+    // Check if chrome.runtime.id is accessible
+    return chrome?.runtime?.id !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 // Overlay State
 export async function getOverlayState(): Promise<OverlayState> {
   console.debug('[STORAGE] Getting overlay state');
+  
+  // Check if extension context is valid
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated - Please reload the page');
+    return {
+      open: false,
+      minimized: false,
+      width: DEFAULT_PANEL_WIDTH,
+      height: DEFAULT_PANEL_HEIGHT,
+      x: window.innerWidth - DEFAULT_PANEL_WIDTH - DEFAULT_X,
+      y: window.innerHeight - DEFAULT_PANEL_HEIGHT - DEFAULT_Y,
+      layoutMode: 'docked',
+    };
+  }
+  
   try {
     const result = await chrome.storage.sync.get(STORAGE_KEYS.OVERLAY_STATE);
     const state = result[STORAGE_KEYS.OVERLAY_STATE] as OverlayState | undefined;
@@ -30,6 +55,7 @@ export async function getOverlayState(): Promise<OverlayState> {
     } else {
       const defaultState: OverlayState = {
         open: false,
+        minimized: false,
         width: DEFAULT_PANEL_WIDTH,
         height: DEFAULT_PANEL_HEIGHT,
         x: window.innerWidth - DEFAULT_PANEL_WIDTH - DEFAULT_X,
@@ -43,6 +69,7 @@ export async function getOverlayState(): Promise<OverlayState> {
     console.error('[STORAGE] Error getting overlay state:', error);
     return {
       open: false,
+      minimized: false,
       width: DEFAULT_PANEL_WIDTH,
       height: DEFAULT_PANEL_HEIGHT,
       x: window.innerWidth - DEFAULT_PANEL_WIDTH - DEFAULT_X,
@@ -54,6 +81,12 @@ export async function getOverlayState(): Promise<OverlayState> {
 
 export async function saveOverlayState(state: OverlayState): Promise<void> {
   console.debug('[STORAGE] Saving overlay state:', state);
+  
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated - Cannot save state. Please reload the page.');
+    return;
+  }
+  
   try {
     await chrome.storage.sync.set({ [STORAGE_KEYS.OVERLAY_STATE]: state });
     console.debug('[STORAGE] State saved successfully');
@@ -69,6 +102,11 @@ export async function getPinnedOrders(): Promise<PinnedOrder[]> {
 }
 
 export async function savePinnedOrder(order: PinnedOrder): Promise<void> {
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated');
+    return;
+  }
+  
   const orders = await getPinnedOrders();
   orders.push(order);
   await chrome.storage.sync.set({ [STORAGE_KEYS.PINNED_ORDERS]: orders });
@@ -81,6 +119,11 @@ export async function removePinnedOrder(id: string): Promise<void> {
 }
 
 export async function reorderPinnedOrder(id: string, direction: 'up' | 'down'): Promise<void> {
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated');
+    return;
+  }
+  
   const orders = await getPinnedOrders();
   const index = orders.findIndex(o => o.id === id);
 
@@ -118,11 +161,26 @@ export async function getMarketHistory(): Promise<MarketHistoryItem[]> {
 
 // Basket
 export async function getBasket(): Promise<BasketLeg[]> {
-  const result = await chrome.storage.sync.get(STORAGE_KEYS.BASKET);
-  return (result[STORAGE_KEYS.BASKET] as BasketLeg[]) || [];
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated');
+    return [];
+  }
+  
+  try {
+    const result = await chrome.storage.sync.get(STORAGE_KEYS.BASKET);
+    return (result[STORAGE_KEYS.BASKET] as BasketLeg[]) || [];
+  } catch (error) {
+    console.error('[STORAGE] Error getting basket:', error);
+    return [];
+  }
 }
 
 export async function saveBasket(basket: BasketLeg[]): Promise<void> {
+  if (!isExtensionContextValid()) {
+    console.warn('[STORAGE] Extension context invalidated');
+    return;
+  }
+  
   await chrome.storage.sync.set({ [STORAGE_KEYS.BASKET]: basket });
 }
 

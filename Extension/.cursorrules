@@ -1,0 +1,286 @@
+# NexHacks Extension - Cursor Rules
+
+## Code Implementation Guidelines
+
+### General Principles
+- **DRY (Don't Repeat Yourself)**: Avoid code duplication
+- **Early Returns**: Use early returns to improve readability and reduce nesting
+- **Readability First**: Prioritize code clarity over performance optimization
+- **Type Safety**: Always use TypeScript with explicit types
+- **No Placeholders**: Leave NO todos, placeholders, or missing pieces
+
+### Naming Conventions
+- **Variables & Functions**: Use descriptive, meaningful names
+  ```typescript
+  // Good
+  const isLoadingMarkets = true;
+  const currentMarketData = { ... };
+  
+  // Bad
+  const loading = true;
+  const data = { ... };
+  ```
+
+- **Event Handlers**: Prefix with "handle"
+  ```typescript
+  // Good
+  const handleClick = () => { ... };
+  const handleKeyDown = (e: React.KeyboardEvent) => { ... };
+  
+  // Bad
+  const onClick = () => { ... };
+  const onKeyDown = (e: React.KeyboardEvent) => { ... };
+  ```
+
+- **Boolean Variables**: Use "is", "has", "should" prefixes
+  ```typescript
+  // Good
+  const isLoading = false;
+  const hasError = false;
+  const shouldShowModal = true;
+  ```
+
+### Function Declarations
+- **Always use const arrow functions**
+  ```typescript
+  // Good
+  const fetchMarkets = async (): Promise<Market[]> => {
+    // implementation
+  };
+  
+  // Bad
+  function fetchMarkets(): Promise<Market[]> {
+    // implementation
+  }
+  ```
+
+- **Type all function parameters and returns**
+  ```typescript
+  // Good
+  const calculatePrice = (price: number, quantity: number): number => {
+    return price * quantity;
+  };
+  
+  // Bad
+  const calculatePrice = (price, quantity) => {
+    return price * quantity;
+  };
+  ```
+
+### TypeScript Standards
+- **Define interfaces for all data structures**
+  ```typescript
+  interface Market {
+    market_id: string;
+    question: string;
+    last_price?: number;
+  }
+  ```
+
+- **Use type aliases for unions and primitives**
+  ```typescript
+  type TabId = 'trending' | 'related';
+  type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+  ```
+
+- **Avoid "any" type - use "unknown" if necessary**
+
+### React Component Standards
+- **Functional Components with TypeScript**
+  ```typescript
+  interface ComponentProps {
+    title: string;
+    onClick: () => void;
+  }
+  
+  const Component: React.FC<ComponentProps> = ({ title, onClick }) => {
+    return <div>{title}</div>;
+  };
+  ```
+
+- **Use Hooks Properly**
+  - useState: Always type the state
+  - useEffect: Include all dependencies
+  - useRef: Type the ref element
+
+### Styling Standards
+- **Use CSS classes (defined in .css files) - NO inline Tailwind in JSX**
+  ```typescript
+  // Good - use className from CSS file
+  <div className="market-card">
+  
+  // Acceptable - minimal inline styles for dynamic values
+  <div style={{ width: `${width}px` }}>
+  
+  // Bad - don't use inline Tailwind classes
+  <div className="flex items-center gap-4">
+  ```
+
+- **CSS Variables**: Use CSS custom properties for theming
+  ```css
+  :root {
+    --bg-primary: #0f0f0f;
+    --text-primary: #ffffff;
+  }
+  ```
+
+### Accessibility Standards
+- **Always include accessibility attributes**
+  ```typescript
+  // Buttons
+  <button
+    onClick={handleClick}
+    onKeyDown={handleKeyDown}
+    aria-label="Descriptive label"
+    tabIndex={0}
+  >
+    Click Me
+  </button>
+  
+  // Icons (decorative)
+  <svg aria-hidden="true">...</svg>
+  
+  // Interactive elements
+  <div
+    role="button"
+    aria-label="Action description"
+    tabIndex={0}
+    onClick={handleClick}
+    onKeyDown={handleKeyDown}
+  >
+  ```
+
+- **Keyboard Navigation**: Support Enter and Space keys
+  ```typescript
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      // perform action
+    }
+  };
+  ```
+
+- **ARIA Roles and States**
+  - `role="button"`, `role="tab"`, `role="dialog"`, etc.
+  - `aria-label`, `aria-labelledby`, `aria-describedby`
+  - `aria-selected`, `aria-pressed`, `aria-expanded`
+  - `aria-hidden="true"` for decorative elements
+
+### Error Handling
+- **Always handle errors gracefully**
+  ```typescript
+  try {
+    const data = await fetchData();
+    setData(data);
+  } catch (e) {
+    console.error('[Component] Error:', e);
+    setError(e instanceof Error ? e.message : 'Unknown error');
+  } finally {
+    setIsLoading(false);
+  }
+  ```
+
+- **Provide user feedback for errors**
+  - Show error messages
+  - Provide retry mechanisms
+  - Use role="alert" for error states
+
+### Import Organization
+```typescript
+// 1. External libraries
+import React, { useState, useEffect } from 'react';
+
+// 2. Internal utilities/types
+import type { Market } from '../types';
+import { fetchMarkets } from '../utils/api';
+
+// 3. Components
+import { MarketCard } from './MarketCard';
+
+// 4. Styles
+import './Component.css';
+```
+
+### Constants
+- **Define constants at the top of file**
+- **Use UPPER_CASE for true constants**
+- **Use PascalCase for constant arrays/objects**
+  ```typescript
+  const API_TIMEOUT = 5000;
+  const MAX_RETRIES = 3;
+  
+  const CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'crypto', label: 'Crypto' },
+  ];
+  ```
+
+### Comments
+- **Use JSDoc for functions**
+  ```typescript
+  /**
+   * Fetches trending markets from the API
+   * @param category - Optional category filter
+   * @param limit - Maximum number of results
+   * @returns Promise with market data
+   */
+  const fetchTrendingMarkets = async (
+    category?: string, 
+    limit: number = 20
+  ): Promise<Market[]> => {
+    // implementation
+  };
+  ```
+
+- **Inline comments for complex logic only**
+- **No commented-out code in production**
+
+### File Organization
+```
+src/
+├── components/
+│   ├── ComponentName.tsx
+│   ├── ComponentName.css
+│   └── tabs/
+│       ├── TrendingTab.tsx
+│       └── RelatedTab.tsx
+├── utils/
+│   ├── api.ts
+│   └── storage.ts
+├── types/
+│   └── index.ts
+└── content/
+    └── content.tsx
+```
+
+### Git Commit Messages
+- Use conventional commits format
+- Examples:
+  - `feat: add trending markets tab`
+  - `fix: resolve keyboard navigation issue`
+  - `refactor: improve error handling`
+  - `style: apply cursor rules to components`
+  - `docs: update README with setup instructions`
+
+## Extension-Specific Rules
+
+### Dynamic Data Only
+- **NO hardcoded mock data**
+- **NO sample data arrays**
+- All data must come from API or page scraping
+
+### Shadow DOM Styles
+- All styles for extension UI must be in `shadowStyles.ts`
+- Use CSS variables for theming
+- Ensure isolation from page styles
+
+### Performance
+- Use React.memo for expensive components
+- Debounce API calls
+- Lazy load tabs when possible
+
+### Browser Extension Best Practices
+- Always check if elements exist before manipulating
+- Clean up event listeners
+- Use passive event listeners where possible
+- Handle errors from chrome.storage API

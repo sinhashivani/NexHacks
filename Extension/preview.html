@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexHacks Extension Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .preview-container {
+      width: 400px;
+      height: 600px;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <iframe id="extension-preview" src="about:blank"></iframe>
+  </div>
+  <script>
+    // Create a standalone preview of the extension UI
+    const iframe = document.getElementById('extension-preview');
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    :root { --polyblue: #4a90ff; --charcoal: #1a1a1a; --radius: 0.75rem; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--charcoal);
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .floating-assistant {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--charcoal);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .floating-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--charcoal);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .nexhacks-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(74,144,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .nexhacks-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--polyblue);
+    }
+    .nexhacks-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin: 0;
+    }
+    .nexhacks-nav {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.4);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .nav-tab.active {
+      color: var(--polyblue);
+      border-bottom-color: var(--polyblue);
+    }
+    .tab-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .trending-tab, .related-tab {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .category-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .category-pill {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.5);
+    }
+    .category-pill.active {
+      background: var(--polyblue);
+      color: #fff;
+    }
+    .markets-list, .related-events {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .market-card, .related-event-card {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .market-question, .event-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .market-yes-no, .event-yes-no {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .market-yes, .market-no, .event-yes, .event-no {
+      flex: 1;
+      border-radius: 8px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+    .market-yes, .event-yes {
+      background: rgba(16,185,129,0.15);
+    }
+    .market-no, .event-no {
+      background: rgba(239,68,68,0.15);
+    }
+    .btn-trade {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--polyblue);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .related-context-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .related-context-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(74,144,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .related-context-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--polyblue);
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-assistant">
+    <div class="floating-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="nexhacks-logo">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" opacity="0.6" />
+            <path d="M2 12l10 5 10-5" opacity="0.8" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="nexhacks-title">NexHacks</h2>
+          <p class="nexhacks-subtitle">Polymarket Companion</p>
+        </div>
+      </div>
+      <button style="background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 20px;">✕</button>
+    </div>
+    <nav class="nexhacks-nav">
+      <button class="nav-tab active">📈 Trending</button>
+      <button class="nav-tab">📊 Related</button>
+    </nav>
+    <div class="tab-content">
+      <div class="trending-tab">
+        <div class="category-pills">
+          <button class="category-pill active">All</button>
+          <button class="category-pill">Politics</button>
+          <button class="category-pill">Sports</button>
+          <button class="category-pill">Crypto</button>
+          <button class="category-pill">Pop Culture</button>
+          <button class="category-pill">Business</button>
+          <button class="category-pill">Science</button>
+        </div>
+        <div class="markets-list">
+          <div class="market-card">
+            <p class="market-question">Will Bitcoin reach $150,000 by July 2025?</p>
+            <div class="market-yes-no">
+              <div class="market-yes">
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">Yes</div>
+                <div style="font-size: 18px; font-weight: 700; color: #10b981;">34¢</div>
+              </div>
+              <div class="market-no">
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">No</div>
+                <div style="font-size: 18px; font-weight: 700; color: #ef4444;">66¢</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 12px;">
+              <span>📈 $12.4M</span>
+              <span>👥 8,420</span>
+            </div>
+            <button class="btn-trade">Trade ↗</button>
+          </div>
+          <div class="market-card">
+            <p class="market-question">Will Trump win the 2028 Republican nomination?</p>
+            <div class="market-yes-no">
+              <div class="market-yes">
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">Yes</div>
+                <div style="font-size: 18px; font-weight: 700; color: #10b981;">67¢</div>
+              </div>
+              <div class="market-no">
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">No</div>
+                <div style="font-size: 18px; font-weight: 700; color: #ef4444;">33¢</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 12px;">
+              <span>📈 $8.2M</span>
+              <span>👥 12,500</span>
+            </div>
+            <button class="btn-trade">Trade ↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+    iframe.srcdoc = html;
+  </script>
+</body>
+</html>

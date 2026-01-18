@@ -1,3 +1,4 @@
+/* NexHacks design tokens - dark mode only */
 :root {
   --polyblue: #4a90ff;
   --radius: 0.75rem;
@@ -12,11 +13,36 @@
   --text-muted: #999999;
   --border-color: #404040;
   --border-hover: #505050;
+  --shadow: 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  
+  /* Scrollbar dark mode */
   --scrollbar-track: #2d2d2d;
   --scrollbar-thumb: #555555;
   --scrollbar-thumb-hover: #666666;
+  
+  /* Yes/No colors - solid for dark mode */
+  --yes-bg: #1e3a2e;
+  --yes-text: #10b981;
+  --no-bg: #3a1e1e;
+  --no-text: #ef4444;
+  
+  /* Category tag colors for dark mode */
+  --category-bg: #1e3a5e;
+  --category-text: #64b5f6;
 }
 
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+}
+
+/* Custom scrollbar for the extension */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -40,5 +66,3 @@
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
-
-/* Main layout lives in shadowStyles for Shadow DOM */

@@ -150,49 +150,113 @@ function createFloatingButton(): HTMLElement {
   const button = document.createElement('button');
   button.id = 'pm-floating-button';
   button.textContent = 'Open panel';
+  
+  // Initial position (will be saved/restored from storage)
+  let buttonX = window.innerWidth - 120;
+  let buttonY = window.innerHeight - 60;
+  
+  const updateButtonPosition = () => {
+    button.style.left = `${buttonX}px`;
+    button.style.top = `${buttonY}px`;
+  };
+  
   button.style.cssText = `
     display: block;
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
     position: fixed;
-    bottom: 16px;
-    right: 16px;
     z-index: 2147483646;
     padding: 12px 16px;
-    background: #1976d2;
-    color: white;
-    border: none;
+    background: #1a1a1a;
+    color: #4a90ff;
+    border: 1px solid #404040;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: grab;
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px #000000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    transition: background-color 0.2s, box-shadow 0.2s;
+    transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
     user-select: none;
     pointer-events: auto;
   `;
+  
+  updateButtonPosition();
+
+  // Drag functionality
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let hasMoved = false;
+
+  button.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    hasMoved = false;
+    dragStartX = e.clientX - buttonX;
+    dragStartY = e.clientY - buttonY;
+    button.style.cursor = 'grabbing';
+    button.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    
+    hasMoved = true;
+    buttonX = e.clientX - dragStartX;
+    buttonY = e.clientY - dragStartY;
+    
+    // Keep button within viewport bounds
+    buttonX = Math.max(0, Math.min(buttonX, window.innerWidth - button.offsetWidth));
+    buttonY = Math.max(0, Math.min(buttonY, window.innerHeight - button.offsetHeight));
+    
+    updateButtonPosition();
+  }, { passive: true });
+
+  document.addEventListener('pointerup', (e) => {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    button.style.cursor = 'grab';
+    
+    try {
+      button.releasePointerCapture(e.pointerId);
+    } catch (_) {
+      // Ignore errors
+    }
+    
+    // Only open if not dragged (click vs drag detection)
+    if (!hasMoved) {
+      e.stopPropagation();
+      console.debug('[CONTENT] Open panel button clicked');
+      try {
+        const state = overlayStore.getState();
+        if (state) {
+          overlayStore.setOpen(!state.open);
+        }
+      } catch (error) {
+        console.error('[CONTENT] Error toggling overlay:', error);
+      }
+    }
+    
+    hasMoved = false;
+  }, { passive: true });
 
   button.addEventListener('mouseenter', () => {
-    button.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+    if (!isDragging) {
+      button.style.boxShadow = '0 6px 16px #000000';
+      button.style.borderColor = '#4a90ff';
+      button.style.background = '#252525';
+    }
   }, { passive: true });
 
   button.addEventListener('mouseleave', () => {
-    button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-  }, { passive: true });
-
-  button.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    console.debug('[CONTENT] Open panel button clicked');
-    try {
-      const state = overlayStore.getState();
-      if (state) {
-        overlayStore.setOpen(!state.open);
-      }
-    } catch (error) {
-      console.error('[CONTENT] Error toggling overlay:', error);
+    if (!isDragging) {
+      button.style.boxShadow = '0 4px 12px #000000';
+      button.style.borderColor = '#404040';
+      button.style.background = '#1a1a1a';
     }
-  });
+  }, { passive: true });
 
   return button;
 }

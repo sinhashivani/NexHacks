@@ -21,7 +21,7 @@ class OverlayStore {
     console.debug('[STORE] Initializing overlayStore from storage');
     this.state = await getOverlayState();
     this.initialized = true;
-    this.lastSavedState = { open: this.state.open, x: this.state.x, y: this.state.y };
+    this.lastSavedState = { open: this.state.open, minimized: this.state.minimized, x: this.state.x, y: this.state.y };
     console.debug('[STORE] Initialized with state:', this.state);
     return this.state;
   }
@@ -109,17 +109,19 @@ class OverlayStore {
       if (this.state) {
         const persistedState = {
           open: this.state.open,
+          minimized: this.state.minimized,
           x: this.state.x,
           y: this.state.y,
           width: this.state.width,
           height: this.state.height,
+          layoutMode: this.state.layoutMode,
         };
 
         console.debug('[STORE] Saving persisted state:', persistedState);
         await saveOverlayState(persistedState);
 
         // Update last saved state
-        this.lastSavedState = { open: this.state.open, x: this.state.x, y: this.state.y };
+        this.lastSavedState = { open: this.state.open, minimized: this.state.minimized, x: this.state.x, y: this.state.y };
       }
       this.saveDebounceTimer = null;
     }, 500);
