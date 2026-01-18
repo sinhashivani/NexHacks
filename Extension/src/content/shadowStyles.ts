@@ -207,6 +207,7 @@ export const shadowStyles = `
   display: flex;
   flex-direction: column;
   min-height: 0;
+  max-height: 100%;
   background: var(--bg-primary) !important;
   position: relative;
   z-index: 1;
@@ -420,6 +421,96 @@ export const shadowStyles = `
   z-index: 1;
 }
 
+/* News tab */
+.news-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-primary) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.news-articles {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  min-height: 0;
+  max-height: 100%;
+  background: var(--bg-primary) !important;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.news-article-card {
+  border-radius: 12px;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px #000000;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.news-article-card:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-hover);
+  box-shadow: 0 2px 6px #000000;
+}
+
+.news-article-image-container {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  position: relative;
+  z-index: 1;
+}
+
+.news-article-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.news-article-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.news-article-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary) !important;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.news-article-source {
+  font-size: 12px;
+  color: var(--text-muted) !important;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
 .related-context-header {
   display: flex;
   align-items: center;
@@ -498,8 +589,10 @@ export const shadowStyles = `
 .related-events {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   min-height: 0;
+  max-height: 100%;
   background: var(--bg-primary) !important;
   position: relative;
   z-index: 1;

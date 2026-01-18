@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { CurrentMarket, OverlayState } from '../types';
 import { TrendingTab } from './tabs/TrendingTab';
 import { RelatedTab } from './tabs/RelatedTab';
+import { NewsTab } from './tabs/NewsTab';
 import './FloatingAssistant.css';
 
 // Types
-type TabId = 'trending' | 'related';
+type TabId = 'trending' | 'related' | 'news';
 
 interface FloatingAssistantProps {
   currentMarket: CurrentMarket;
@@ -78,6 +79,25 @@ const RelatedNavIcon: React.FC = () => (
     <line x1="18" y1="20" x2="18" y2="10" />
     <line x1="12" y1="20" x2="12" y2="4" />
     <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
+const NewsNavIcon: React.FC = () => (
+  <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+    <path d="M18 14h-8" />
+    <path d="M15 18h-5" />
+    <path d="M10 6h8v4h-8V6Z" />
   </svg>
 );
 
@@ -314,12 +334,25 @@ export const FloatingAssistant: React.FC<FloatingAssistantProps> = ({
         >
           <RelatedNavIcon /> Related
         </button>
+        <button
+          className={`nav-tab ${activeTab === 'news' ? 'active' : ''}`}
+          onClick={() => handleTabClick('news')}
+          onKeyDown={(e) => handleTabKeyDown(e, 'news')}
+          role="tab"
+          aria-selected={activeTab === 'news'}
+          aria-controls="news-panel"
+          aria-label="News articles"
+          tabIndex={0}
+        >
+          <NewsNavIcon /> News
+        </button>
       </nav>
 
       {/* Tab Content */}
       <main className="tab-content" role="tabpanel" id={`${activeTab}-panel`}>
         {activeTab === 'trending' && <TrendingTab />}
         {activeTab === 'related' && <RelatedTab />}
+        {activeTab === 'news' && <NewsTab />}
       </main>
 
       {/* Resize Handle */}

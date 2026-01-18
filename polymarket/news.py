@@ -118,6 +118,7 @@ def fetch_news(question: str) -> list[dict]:
                         "title": a.get("title"),
                         "image": a.get("image"),
                         "name": (a.get("source") or {}).get("name"),
+                        "url": a.get("url"),
                     }
                 )
             return out

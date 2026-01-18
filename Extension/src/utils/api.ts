@@ -1,6 +1,6 @@
 import type { RecommendationRequest, RecommendationResponse, TagsResponse } from '../types';
 
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND || import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND || import.meta.env.VITE_BACKEND_URL || 'https://nexhacks-nu.vercel.app';
 
 // FLAG #1: BACKEND URL ASSUMPTION
 // ASSUMPTION: Backend runs on http://localhost:8000 or env var VITE_BACKEND/VITE_BACKEND_URL
@@ -220,6 +220,7 @@ export interface NewsArticle {
   title: string;
   image?: string;
   name: string;
+  url?: string;
 }
 
 export interface NewsResponse {
@@ -229,11 +230,11 @@ export interface NewsResponse {
 }
 
 export const getNews = async (question: string): Promise<NewsResponse> => {
-  console.log('[API] Fetching news:', `${API_BASE_URL}/news?question=${encodeURIComponent(question)}`);
+  console.log('[API] Fetching news:', `${BACKEND_BASE_URL}/news?question=${encodeURIComponent(question)}`);
   
   try {
     const response = await fetch(
-      `${API_BASE_URL}/news?question=${encodeURIComponent(question)}`,
+      `${BACKEND_BASE_URL}/news?question=${encodeURIComponent(question)}`,
       {
         method: 'GET',
         headers: {

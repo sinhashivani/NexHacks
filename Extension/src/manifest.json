@@ -12,6 +12,7 @@
     "https://polymarket.com/*",
     "https://*.polymarket.com/*",
     "http://localhost:8000/*",
+    "https://nexhacks-nu.vercel.app/*",
     "http://127.0.0.1:8000/*",
     "https://nexhacks.vercel.app/*",
     "https://*.vercel.app/*"

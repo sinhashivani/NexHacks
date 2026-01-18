@@ -85,9 +85,25 @@ class TrendingService:
             # Filter active markets only
             query = query.eq("active", True).eq("closed", False)
             
-            # Filter by category if provided
-            if category:
-                query = query.eq("tag_label", category.lower())
+            # Filter by category if provided (case-insensitive matching)
+            if category and category.lower() != 'all':
+                # Normalize category name for matching
+                category_normalized = category.lower().strip()
+                # Handle common variations
+                category_map = {
+                    'politics': 'politics',
+                    'sports': 'sports',
+                    'crypto': 'crypto',
+                    'pop-culture': 'pop culture',
+                    'pop culture': 'pop culture',
+                    'business': 'business',
+                    'economy': 'economy',
+                    'science': 'science',
+                    'tech': 'technology',
+                    'technology': 'technology',
+                }
+                mapped_category = category_map.get(category_normalized, category_normalized)
+                query = query.ilike("tag_label", f"%{mapped_category}%")
             
             # Get markets
             markets_response = query.execute()

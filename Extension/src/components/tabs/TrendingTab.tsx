@@ -26,7 +26,9 @@ const CATEGORIES: Category[] = [
   { id: 'crypto', label: 'Crypto' },
   { id: 'pop-culture', label: 'Pop Culture' },
   { id: 'business', label: 'Business' },
+  { id: 'economy', label: 'Economy' },
   { id: 'science', label: 'Science' },
+  { id: 'tech', label: 'Tech' },
 ];
 
 // Icon Components
@@ -108,8 +110,34 @@ export const TrendingTab: React.FC = () => {
     setError(null);
     
     try {
-      const data = await getTrendingMarkets(category === 'all' ? undefined : category, 20);
-      setMarkets(data.markets || []);
+      // Map frontend category IDs to backend category names
+      const categoryMap: Record<string, string | undefined> = {
+        'all': undefined,
+        'politics': 'politics',
+        'sports': 'sports',
+        'crypto': 'crypto',
+        'pop-culture': 'pop culture',
+        'business': 'business',
+        'economy': 'economy',
+        'science': 'science',
+        'tech': 'technology',
+      };
+      
+      const backendCategory = categoryMap[category];
+      console.log(`[TrendingTab] Loading markets for category: ${category} -> ${backendCategory || 'all'}`);
+      
+      const data = await getTrendingMarkets(backendCategory, 50); // Get more for better sorting
+      const markets = data.markets || [];
+      
+      // Sort by trending_score (highest first) - backend should already do this, but ensure it
+      const sortedMarkets = [...markets].sort((a, b) => {
+        const scoreA = a.trending_score || a.open_interest || 0;
+        const scoreB = b.trending_score || b.open_interest || 0;
+        return scoreB - scoreA;
+      });
+      
+      console.log(`[TrendingTab] Loaded ${sortedMarkets.length} markets, top score: ${sortedMarkets[0]?.trending_score || 'N/A'}`);
+      setMarkets(sortedMarkets);
     } catch (e) {
       console.error('[TrendingTab] Error loading markets:', e);
       setError(e instanceof Error ? e.message : 'Failed to load trending markets');
@@ -217,9 +245,9 @@ export const TrendingTab: React.FC = () => {
             >
               <p className="market-question">{market.question}</p>
               
-              {market.tag_label && (
-                <span className="market-category-tag" aria-label={`Category: ${market.tag_label}`}>
-                  {market.tag_label}
+              {(market.tag_label || market.canonical_category) && (
+                <span className="market-category-tag" aria-label={`Category: ${market.tag_label || market.canonical_category}`}>
+                  {market.tag_label || market.canonical_category}
                 </span>
               )}
               
