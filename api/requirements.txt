@@ -4,7 +4,6 @@ httptools==0.7.1
 importlib-metadata==8.0.0
 jaraco.collections==5.1.0
 pandas==2.3.3
-pip-chill==1.0.3
 platformdirs==4.2.2
 psycopg2-binary==2.9.11
 python-dotenv==1.2.1
@@ -15,3 +14,4 @@ uvicorn==0.40.0
 uvloop==0.22.1
 watchfiles==1.1.1
 websockets==16.0
+gunicorn==23.0.0
